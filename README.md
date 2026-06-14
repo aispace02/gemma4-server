@@ -12,11 +12,25 @@ This repository contains Docker Compose configurations to deploy and run Gemma-4
 
 ## 从零开始部署所需下载的资源 (Deploying From Scratch)
 
-如果在一台干净的设备上从零开始部署，您需要下载并配置以下三个核心部分：
+如果在一台干净的设备上从零开始部署，您需要准备和下载以下三个部分。针对国内网络环境，我们推荐使用**南京大学 (NJU) 镜像源**加速容器镜像拉取，以及**ModelScope**加速模型权重下载。
 
-1. **容器及推理引擎**：拉取预编译好的 `llama.cpp` Docker 镜像（包含 CUDA 编译的 `llama-server` 引擎）。
-2. **大模型权重文件**：下载 Gemma-4 的 `.gguf` 格式权重文件（存放于 SSD）。
-3. **系统依赖**：设备需要安装 Docker、Docker Compose 和 NVIDIA Container Toolkit（用于在容器中调用 GPU）。
+### 1. 推理引擎及容器镜像（使用南京大学镜像源加速）
+由于国内直接访问 `ghcr.io` (GitHub Container Registry) 极慢或无法连接，推荐使用南京大学的 GHCR 镜像站拉取并使用“双标签”方式配置：
+
+```bash
+# A. 使用南大镜像源极速拉取 llama_cpp 镜像
+docker pull ghcr.nju.edu.cn/nvidia-ai-iot/llama_cpp:latest-jetson-orin
+
+# B. 为镜像打上官方标签（双标签指向同一 Image ID，不占用额外磁盘空间，确保 Compose 文件可无缝引用）
+docker tag ghcr.nju.edu.cn/nvidia-ai-iot/llama_cpp:latest-jetson-orin ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin
+```
+
+### 2. 大模型权重文件（使用 ModelScope 加速）
+使用 ModelScope 魔搭社区的国内带宽极速下载 `.gguf` 权重文件，详见下方的**模型下载指南**。
+
+### 3. 系统依赖（宿主机一次性配置）
+* 安装 Docker 和 Docker Compose。
+* 安装 NVIDIA Container Toolkit 并配置 `/etc/docker/daemon.json`（已在您之前的系统文档中记录）。
 
 ---
 
