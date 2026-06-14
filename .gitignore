@@ -1,0 +1,10 @@
+# Logs
+*.log
+
+# Local/system files
+.DS_Store
+Thumbs.db
+
+# In case downloads or model files are placed locally
+*.gguf
+*.safetensors

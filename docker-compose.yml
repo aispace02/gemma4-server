@@ -1,0 +1,44 @@
+x-llama-common: &llama-common
+  image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin
+  runtime: nvidia
+  network_mode: host
+  restart: unless-stopped
+  volumes:
+    - /mnt/ssd/huggingface:/root/.cache/huggingface
+  environment:
+    - HF_ENDPOINT=https://hf-mirror.com
+
+services:
+  gemma4-31b:
+    <<: *llama-common
+    container_name: gemma4-31b
+    command: >
+      llama-server
+      -hf unsloth/gemma-4-31B-it-qat-GGUF:UD-Q4_K_XL
+      --port 8080
+      -ngl 999
+      -c 8192
+      --flash-attn
+      --cache-type-k q8_0
+      --cache-type-v q4_0
+      -t 8
+      --batch-size 512
+      --ubatch-size 256
+      --mlock
+
+  gemma4-26b-a4b:
+    <<: *llama-common
+    container_name: gemma4-26b-a4b
+    command: >
+      llama-server
+      -hf unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL
+      --port 8081
+      -ngl 999
+      -c 8192
+      --flash-attn
+      --cache-type-k q8_0
+      --cache-type-v q4_0
+      -t 8
+      --batch-size 512
+      --ubatch-size 256
+      --mlock
