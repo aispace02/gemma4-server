@@ -43,15 +43,23 @@ docker tag ghcr.nju.edu.cn/nvidia-ai-iot/llama_cpp:latest-jetson-orin ghcr.io/nv
 
 ### 1. 安装 ModelScope CLI 命令行工具
 
-在宿主机终端中执行：
+由于 Jetson 设备（新版 JetPack 系统）限制了对系统全局 Python 环境的直接修改，推荐在包含系统库（如已安装好的 PyTorch、TensorRT 等）继承的虚拟环境中安装：
 
 ```bash
+# 创建继承系统包的虚拟环境（避免覆盖 Nvidia 专属优化库）
+python3 -m venv --system-site-packages ~/modelscope_env
+
+# 激活虚拟环境
+source ~/modelscope_env/bin/activate
+
+# 升级 pip 并安装 modelscope
+pip install --upgrade pip
 pip install modelscope
 ```
 
 ### 2. 从 ModelScope 下载 GGUF 权重到 SSD
 
-利用 `modelscope` 命令行工具，只下载需要的单个 GGUF 文件并保存到缓存路径：
+在宿主机终端中**确保已激活上述虚拟环境**（若未激活，请执行 `source ~/modelscope_env/bin/activate`），利用 `modelscope` 命令行工具只下载需要的单个 GGUF 文件并保存到缓存路径：
 
 - **Gemma-4 31B (Dense QAT GGUF)**：
 
@@ -65,7 +73,7 @@ pip install modelscope
   modelscope download --model unsloth/gemma-4-26B-A4B-it-qat-GGUF gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf --local_dir /mnt/ssd/huggingface
   ```
 
-_(备份方案：如果通过 ModelScope 遇到问题，也可以使用 Hugging Face 的新命令行工具下载：`pip install -U huggingface_hub && export HF_ENDPOINT=https://hf-mirror.com && hf download unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface`)_
+_(备份方案：如果通过 ModelScope 遇到问题，也可以激活虚拟环境后使用 Hugging Face 的新命令行工具下载：`pip install -U huggingface_hub && export HF_ENDPOINT=https://hf-mirror.com && hf download unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface`)_
 
 ---
 
