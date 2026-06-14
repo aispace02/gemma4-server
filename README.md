@@ -10,30 +10,40 @@ This repository contains Docker Compose configurations to deploy and run Gemma-4
 
 ---
 
-## Model Downloads (Mainland China / High Stability)
+## 从零开始部署所需下载的资源 (Deploying From Scratch)
 
-Since the built-in downloader in `llama-server` is slow and unstable under container runtime, it is highly recommended to pre-download the GGUF models to your local SSD directory (`/mnt/ssd/huggingface`) using the Hugging Face CLI (`hf`) before starting the containers.
+如果在一台干净的设备上从零开始部署，您需要下载并配置以下三个核心部分：
 
-### 1. Install Hugging Face Hub CLI
-On the host terminal, install the tools and set the mirror endpoint:
+1. **容器及推理引擎**：拉取预编译好的 `llama.cpp` Docker 镜像（包含 CUDA 编译的 `llama-server` 引擎）。
+2. **大模型权重文件**：下载 Gemma-4 的 `.gguf` 格式权重文件（存放于 SSD）。
+3. **系统依赖**：设备需要安装 Docker、Docker Compose 和 NVIDIA Container Toolkit（用于在容器中调用 GPU）。
+
+---
+
+## 极速模型下载指南 (Model Downloads via ModelScope)
+
+在大陆网络环境下，直接从 Hugging Face 下载模型可能会非常缓慢或中断。**推荐使用阿里 ModelScope (魔搭社区) 下载**，它可以提供跑满带宽的极速下载体验，且无需配置代理。
+
+### 1. 安装 ModelScope CLI 命令行工具
+在宿主机终端中执行：
 ```bash
-pip install -U huggingface_hub
-export HF_ENDPOINT=https://hf-mirror.com
+pip install modelscope
 ```
-*Note: Make sure your `huggingface_hub` is updated to get the new `hf` command.*
 
-### 2. Download the Models
-Choose and download the model GGUF file(s) you need using the `hf` CLI:
+### 2. 从 ModelScope 下载 GGUF 权重到 SSD
+利用 `modelscope` 命令行工具，只下载需要的单个 GGUF 文件并保存到缓存路径：
 
-- **Gemma-4 31B (Dense QAT GGUF)**:
+- **Gemma-4 31B (Dense QAT GGUF)**：
   ```bash
-  hf download unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
+  modelscope download --model unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local_dir /mnt/ssd/huggingface
   ```
 
-- **Gemma-4 26B-A4B (MoE QAT GGUF)**:
+- **Gemma-4 26B-A4B (MoE QAT GGUF)**：
   ```bash
-  hf download unsloth/gemma-4-26B-A4B-it-qat-GGUF gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
+  modelscope download --model unsloth/gemma-4-26B-A4B-it-qat-GGUF gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf --local_dir /mnt/ssd/huggingface
   ```
+
+*(备份方案：如果通过 ModelScope 遇到问题，也可以使用 Hugging Face 的新命令行工具下载：`pip install -U huggingface_hub && export HF_ENDPOINT=https://hf-mirror.com && hf download unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface`)*
 
 ---
 
