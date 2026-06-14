@@ -12,7 +12,7 @@ This repository contains Docker Compose configurations to deploy and run Gemma-4
 
 ## Model Downloads (Mainland China / High Stability)
 
-Since the built-in downloader in `llama-server` is slow and unstable under container runtime, it is highly recommended to pre-download the GGUF models to your local SSD directory (`/mnt/ssd/huggingface`) using `huggingface-cli` before starting the containers.
+Since the built-in downloader in `llama-server` is slow and unstable under container runtime, it is highly recommended to pre-download the GGUF models to your local SSD directory (`/mnt/ssd/huggingface`) using the Hugging Face CLI (`hf`) before starting the containers.
 
 ### 1. Install Hugging Face Hub CLI
 On the host terminal, install the tools and set the mirror endpoint:
@@ -20,18 +20,19 @@ On the host terminal, install the tools and set the mirror endpoint:
 pip install -U huggingface_hub
 export HF_ENDPOINT=https://hf-mirror.com
 ```
+*Note: Make sure your `huggingface_hub` is updated to get the new `hf` command.*
 
 ### 2. Download the Models
-Choose and download the model GGUF file(s) you need:
+Choose and download the model GGUF file(s) you need using the `hf` CLI:
 
 - **Gemma-4 31B (Dense QAT GGUF)**:
   ```bash
-  huggingface-cli download unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
+  hf download unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
   ```
 
 - **Gemma-4 26B-A4B (MoE QAT GGUF)**:
   ```bash
-  huggingface-cli download unsloth/gemma-4-26B-A4B-it-qat-GGUF gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
+  hf download unsloth/gemma-4-26B-A4B-it-qat-GGUF gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
   ```
 
 ---
