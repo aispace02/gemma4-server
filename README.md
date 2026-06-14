@@ -98,6 +98,70 @@ docker compose logs -f gemma4-26b-a4b
 
 ---
 
+## 接入 Pi Agent 配置 (Connecting to Pi Agent)
+
+如果需要将本地部署的 Gemma-4 接入开源终端编程助手 **Pi Agent (`pi-coding-agent`)**，请按照以下步骤进行配置：
+
+### 1. 配置自定义模型接口 (`~/.pi/agent/models.json`)
+创建或修改 `~/.pi/agent/models.json` 文件，将本地的 31B（端口 8080）和 26B-A4B（端口 8081）分别注册为自定义 Provider：
+
+```json
+{
+  "providers": {
+    "local-gemma-31b": {
+      "baseUrl": "http://localhost:8080/v1",
+      "api": "openai-completions",
+      "apiKey": "not-needed",
+      "models": [
+        {
+          "id": "unsloth/gemma-4-31B-it-qat-GGUF:UD-Q4_K_XL",
+          "name": "Local Gemma-4 31B",
+          "contextWindow": 8192
+        }
+      ]
+    },
+    "local-gemma-26b": {
+      "baseUrl": "http://localhost:8081/v1",
+      "api": "openai-completions",
+      "apiKey": "not-needed",
+      "models": [
+        {
+          "id": "unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL",
+          "name": "Local Gemma-4 26B-A4B",
+          "contextWindow": 8192
+        }
+      ]
+    }
+  }
+}
+```
+
+### 2. 配置默认模型 (`~/.pi/agent/settings.json`)
+若希望默认调用本地 31B 模型，请在 `~/.pi/agent/settings.json` 中配置：
+
+```json
+{
+  "defaultProvider": "local-gemma-31b",
+  "defaultModel": "unsloth/gemma-4-31B-it-qat-GGUF:UD-Q4_K_XL",
+  "defaultThinkingLevel": "off"
+}
+```
+*(注：建议将 `defaultThinkingLevel` 设为 `"off"` 以确保本地运行流畅)*
+
+### 3. 会话中动态切换模型
+在 Pi Agent 的交互命令行中，可直接输入 `/model` 指令进行切换：
+* **切换到 31B 模型**：
+  ```text
+  /model local-gemma-31b/unsloth/gemma-4-31B-it-qat-GGUF:UD-Q4_K_XL
+  ```
+* **切换到 26B A4B 模型**：
+  ```text
+  /model local-gemma-26b/unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL
+  ```
+* 也可以按下快捷键 **`Ctrl + L`** 在弹出的模型菜单中选择。
+
+---
+
 ## Multiline Input in Client Terminal (agy / MobaXterm)
 
 If you are accessing this server via SSH client (like MobaXterm on Windows) and using `agy` or another terminal-based client, the standard `Enter` key will send your message immediately.
