@@ -14,7 +14,7 @@ services:
     container_name: gemma4-31b
     command: >
       llama-server
-      -hf unsloth/gemma-4-31B-it-qat-GGUF:UD-Q4_K_XL
+      -m /root/.cache/huggingface/gemma-4-31B-it-qat-UD-Q4_K_XL.gguf
       --port 8080
       -ngl 999
       -c 8192
@@ -31,7 +31,7 @@ services:
     container_name: gemma4-26b-a4b
     command: >
       llama-server
-      -hf unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL
+      -m /root/.cache/huggingface/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf
       --port 8081
       -ngl 999
       -c 8192
