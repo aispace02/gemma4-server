@@ -17,7 +17,7 @@ services:
       -m /root/.cache/huggingface/gemma-4-31B-it-qat-UD-Q4_K_XL.gguf
       --port 8080
       -ngl 999
-      -c 8192
+      -c 65536
       --flash-attn on
       --cache-type-k q8_0
       --cache-type-v q4_0
@@ -25,6 +25,9 @@ services:
       --batch-size 512
       --ubatch-size 256
       --mlock
+      --jinja
+      --cache-ram 0
+      --swa-checkpoints 4
 
   gemma4-26b-a4b:
     <<: *llama-common
@@ -34,7 +37,7 @@ services:
       -m /root/.cache/huggingface/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf
       --port 8081
       -ngl 999
-      -c 8192
+      -c 65536
       --flash-attn on
       --cache-type-k q8_0
       --cache-type-v q4_0
@@ -42,3 +45,6 @@ services:
       --batch-size 512
       --ubatch-size 256
       --mlock
+      --jinja
+      --cache-ram 0
+      --swa-checkpoints 4
