@@ -165,9 +165,11 @@ docker compose logs -f gemma4-26b-a4b
       "apiKey": "not-needed",
       "models": [
         {
-          "id": "unsloth/gemma-4-31B-it-qat-GGUF:UD-Q4_K_XL",
           "name": "Local Gemma-4 31B",
-          "contextWindow": 8192
+          "id": "gemma-4-31B",
+          "contextWindow": 65536,
+          "maxOutputTokens": 16384,
+          "input": ["text"]
         }
       ]
     },
@@ -177,9 +179,11 @@ docker compose logs -f gemma4-26b-a4b
       "apiKey": "not-needed",
       "models": [
         {
-          "id": "unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL",
-          "name": "Local Gemma-4 26B-A4B",
-          "contextWindow": 8192
+          "id": "gemma-4-26B",
+          "name": "Local Gemma-4 26B",
+          "contextWindow": 8192,
+          "maxOutputTokens": 2048,
+          "input": ["text"]
         }
       ]
     }
