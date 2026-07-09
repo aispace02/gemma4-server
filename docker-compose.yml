@@ -82,7 +82,7 @@ services:
     container_name: qwen36-35b-moe
     command: >
       llama-server
-      -m /root/.cache/huggingface/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf
+      -m /root/.cache/huggingface/Qwopus3.6-35B-A3B-v1-MTP-Q4_K_M.gguf
       --host 0.0.0.0
       --port 8084
       -ngl 999
