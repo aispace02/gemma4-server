@@ -2,6 +2,12 @@ x-llama-common: &llama-common
   # JetPack 7.2 (L4T 39.2 / CUDA 13.2.1 / Ubuntu 24.04) 专用构建
   # 使用本地 Dockerfile 基于 NVIDIA NGC cuda:13.2.1-runtime-ubuntu24.04
   # llama-server 二进制及共享库通过 volume 挂载从宿主机 /usr/local 注入容器
+  #
+  # 注意: 挂载目标路径使用 /opt/llama 而不是 /usr/local 的原因:
+  #   NVIDIA CDI hook (nvidia-cdi-hook cudacompat) 在容器初始化时会扫描标准库
+  #   路径（/usr/local/lib 等）寻找 CUDA 库做前向兼容性检测，解析
+  #   libggml-cuda.so 的 ELF 头时会触发 toolkit 自身的 bug（panic: slice
+  #   bounds out of range）。挂载到 /opt/llama 非标准路径可避开扫描。
   build:
     context: .
     dockerfile: Dockerfile
@@ -10,16 +16,19 @@ x-llama-common: &llama-common
   restart: unless-stopped
   volumes:
     - /mnt/ssd/huggingface:/root/.cache/huggingface
-    # 将宿主机编译安装的 llama-server 二进制和共享库注入容器
-    # 宿主机更新 llama.cpp 后执行: sudo cmake --install ... --prefix /usr/local
-    # 然后只需: docker compose restart  (无需 docker compose build)
-    - /usr/local/bin:/usr/local/bin:ro
-    - /usr/local/lib:/usr/local/lib:ro
+    # 将宿主机编译安装的 llama-server 二进制和共享库挂载到非标准路径
+    # 避开 NVIDIA CDI hook 对 /usr/local/lib 的 CUDA ELF 扫描 (panic bug)
+    # 宿主机更新 llama.cpp 并重新安装后，只需: docker compose restart
+    - /usr/local/bin:/opt/llama/bin:ro
+    - /usr/local/lib:/opt/llama/lib:ro
   environment:
     - HF_ENDPOINT=https://hf-mirror.com
     # Jetson UMA 统一内存优化: 允许运行时统一调度 CPU/GPU 内存，
     # 社区实测可带来约 10~15% 的推理性能提升
     - GGML_CUDA_ENABLE_UNIFIED_MEMORY=1
+    # 让容器能找到挂载到 /opt/llama 的二进制和共享库
+    - PATH=/opt/llama/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    - LD_LIBRARY_PATH=/opt/llama/lib
   ulimits:
     memlock:
       soft: -1
