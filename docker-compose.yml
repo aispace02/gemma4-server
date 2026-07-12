@@ -1,9 +1,7 @@
 x-llama-common: &llama-common
   # JetPack 7.2 (L4T 39.2 / CUDA 13.2.1 / Ubuntu 24.04) 专用构建
-  # 使用本地 Dockerfile 基于 NVIDIA NGC cuda:13.2.1-devel-ubuntu24.04 编译
-  # 注意: 旧的 ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin 基于
-  #       JetPack 6 / CUDA 12.x 构建，在 JetPack 7.2 上 CUDA ABI 不匹配，
-  #       会导致 "operation not supported" 错误，不可直接使用。
+  # 使用本地 Dockerfile 基于 NVIDIA NGC cuda:13.2.1-runtime-ubuntu24.04
+  # llama-server 二进制及共享库通过 volume 挂载从宿主机 /usr/local 注入容器
   build:
     context: .
     dockerfile: Dockerfile
@@ -12,6 +10,11 @@ x-llama-common: &llama-common
   restart: unless-stopped
   volumes:
     - /mnt/ssd/huggingface:/root/.cache/huggingface
+    # 将宿主机编译安装的 llama-server 二进制和共享库注入容器
+    # 宿主机更新 llama.cpp 后执行: sudo cmake --install ... --prefix /usr/local
+    # 然后只需: docker compose restart  (无需 docker compose build)
+    - /usr/local/bin:/usr/local/bin:ro
+    - /usr/local/lib:/usr/local/lib:ro
   environment:
     - HF_ENDPOINT=https://hf-mirror.com
     # Jetson UMA 统一内存优化: 允许运行时统一调度 CPU/GPU 内存，

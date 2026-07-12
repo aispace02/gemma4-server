@@ -171,20 +171,39 @@ docker compose logs -f gemma4-12b-agentic
 docker compose logs -f qwen36-35b-moe
 ```
 
-### 5.3. 更新推理引擎`llama.cpp`
+### 5.3. 更新推理引擎 `llama.cpp`
 
-本项目已切换为**自编译最新版 llama.cpp**（详见 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile)）。
-更新方式为重新构建镜像，而不是拉取预编译镜像：
+本项目采用**宿主机编译 + Docker volume 挂载**方案（详见 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile)）：
+llama.cpp 在宿主机上编译并安装到 `/usr/local`，通过 volume 挂载注入容器，**无需在 Docker 内编译**。
+
+更新 llama.cpp 到最新版（需要代理/网络）：
 
 ```bash
-# 重新拉取最新源码并重新编译 (将重新下载 llama.cpp master 并编译)
-docker compose build --no-cache
+# 1. 更新 llama.cpp submodule 源码
+cd llama.cpp && git pull && cd ..
 
-# 将新镜像应用到服务
-docker compose up -d
+# 2. 在宿主机重新编译（使用与现有安装相同的优化参数）
+cmake -B llama.cpp/build -G Ninja \
+    -DGGML_CUDA=ON \
+    -DCMAKE_CUDA_ARCHITECTURES=87 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DGGML_CUDA_F16=ON \
+    -DGGML_CUDA_FA_ALL_QUANTS=ON \
+    -DGGML_CUDA_DMMV_X=64 \
+    -DGGML_CUDA_MMV_Y=2 \
+    -DGGML_CUDA_NO_VMM=ON \
+    -DLLAMA_CURL=ON
+cmake --build llama.cpp/build --parallel
+
+# 3. 安装到宿主机 /usr/local（需要 sudo）
+sudo cmake --install llama.cpp/build --prefix /usr/local
+sudo ldconfig
+
+# 4. 重启容器即可生效（无需 docker compose build！）
+docker compose restart
 ```
 
-### 5.4. 自建镜像说明 (Dockerfile 编译参数详解)
+### 5.4. 架构说明 (Dockerfile 设计)
 
 > **⚠️ JetPack 7.2 兼容性说明**
 >
@@ -192,30 +211,37 @@ docker compose up -d
 > 旧的 `ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin` 预编译镜像基于
 > **JetPack 6 / CUDA 12.x** 构建，在 JetPack 7.2 主机上会因 **CUDA ABI 不匹配**
 > 出现 `operation not supported` 错误，**无法直接使用**。
->
-> 因此 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 改用
-> NVIDIA NGC 官方 **`cuda:13.2.1-devel-ubuntu24.04`** ARM64 镜像作为基础，
-> 在容器内重新编译最新版 llama.cpp，与 JetPack 7.2 环境完全匹配。
 
-[Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 在 NGC CUDA 13.2 devel 镜像基础上，
-编译安装最新 llama.cpp master 分支。主要编译优化参数如下：
+[Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 基于 `cuda:13.2.1-runtime-ubuntu24.04`（轻量运行时镜像，非 devel），
+**仅安装运行时依赖**（`libcurl4`、`libgomp1`），不包含任何编译步骤。
+
+llama.cpp 二进制和共享库由 [docker-compose.yml](file:///home/hxf0223/tmp/gemma-server/docker-compose.yml) 通过 volume 从宿主机注入：
+
+```yaml
+volumes:
+  - /usr/local/bin:/usr/local/bin:ro   # llama-server 等工具
+  - /usr/local/lib:/usr/local/lib:ro   # libllama*.so、libggml*.so 等
+```
+
+由于 `runtime: nvidia` 会将宿主机 CUDA 13.2.1 驱动库自动挂载进容器，
+宿主机编译的 ARM aarch64 二进制在容器内可直接运行，无需重复编译。
+
+**编译参数**（在宿主机执行 cmake 时使用）：
 
 | 参数 | 作用 |
 |---|---|
 | `GGML_CUDA=ON` | 启用 CUDA 后端 |
-| `CMAKE_CUDA_ARCHITECTURES=87` | 仅编译 sm_87 (Orin AGX)，缩短编译时间并减小二进制体积 |
-| `GGML_CUDA_F16=ON` | Flash Attention 使用 FP16 Tensor Core，长上下文推理显著加速 |
+| `CMAKE_CUDA_ARCHITECTURES=87` | 仅编译 sm_87 (Orin AGX)，缩短编译时间并减小体积 |
+| `GGML_CUDA_F16=ON` | Flash Attention 使用 FP16 Tensor Core，长上下文推理加速 |
 | `GGML_CUDA_FA_ALL_QUANTS=ON` | 对所有量化格式均启用 Flash Attention，防止回退到慢路径 |
 | `GGML_CUDA_DMMV_X=64` | 矩阵-向量乘法 X 维并行度，匹配 Orin 2048 CUDA Cores |
 | `GGML_CUDA_MMV_Y=2` | 矩阵-向量乘法 Y 维并行度，社区实测可获得 10~20% 加速 |
-| `GGML_CUDA_NO_VMM=ON` | 禁用 VMM 大块预分配，专为 Jetson UMA 共享内存架构设计，防止 OOM |
+| `GGML_CUDA_NO_VMM=ON` | 禁用 VMM 大块预分配，专为 Jetson UMA 共享内存架构设计 |
 | `LLAMA_CURL=ON` | llama-server 支持从 URL 加载模型 |
 
-运行时还通过 `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 环境变量启用统一内存调度，
-社区实测在 Linux 上可提升推理性能约 **10~15%**。
+运行时通过 `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 环境变量启用统一内存调度，
+社区实测可提升推理性能约 **10~15%**。
 
-> **如需回退到官方镜像**：打开 [docker-compose.yml](file:///home/hxf0223/tmp/gemma-server/docker-compose.yml)，
-> 将 `build:` 块注释，取消注释 `image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin` 即可。
 
 ### 5.5. ~~直接在本地运行 Qwopus3.6-35B-A3B（不使用 Docker）~~ [已废弃]
 
