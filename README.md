@@ -217,24 +217,19 @@ docker compose up -d
 > **如需回退到官方镜像**：打开 [docker-compose.yml](file:///home/hxf0223/tmp/gemma-server/docker-compose.yml)，
 > 将 `build:` 块注释，取消注释 `image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin` 即可。
 
-### 5.5. 直接在本地运行 Qwopus3.6-35B-A3B（不使用 Docker）
+### 5.5. ~~直接在本地运行 Qwopus3.6-35B-A3B（不使用 Docker）~~ [已废弃]
 
-`Qwopus3.6-35B-A3B`是蒸馏了`Claude Opus`得到的。由于模型`Qwopus3.6-35B-A3B`比较新，而在 Jetson Orin 上使用 Docker 安装的 `llama.cpp` 版本有些老旧，不支持该模型中的一些新结构，导致模型加载出错，需要在本地编译最新版的`llama.cpp`，并在本地运行`Qwopus3.6-35B-A3B`。操作命令如下：
-
-```bash
-git clone https://github.com/ggml-org/llama.cpp.git
-cd llama.cpp
-
-# 编译最新的 llama.cpp，并安装
-cmake -B build -DGGML_CUDA=ON -DGGML_CUDA_F16=ON -DLLAMA_CURL=ON -DGGML_CUDA_FA_ALL_QUANTS=ON -DCMAKE_CUDA_ARCHITECTURES=87 -DGGML_CUDA_DMMV_X=64 -DGGML_CUDA_MMV_Y=2 -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
-cmake --install build --prefix ~/.local
-
-# 本地运行 Qwopus3.6-35B-A3B 模型，需要添加 PATH 环境变量以及 LD_LIBRARY_PATH 环境变量
-export PATH=$HOME/.local/bin:$PATH
-export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
-llama-server -m /mnt/ssd/huggingface/Qwopus3.6-35B-A3B-v1-MTP-Q4_K_M.gguf --host 0.0.0.0 --port 8084 -ngl 999 -c 65536 --flash-attn on
-```
+> **此方案已被 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 取代，无需再手动编译安装。**
+>
+> 之前需要手动编译是因为 `ghcr.io/nvidia-ai-iot/llama_cpp` 预编译镜像版本过旧，
+> 不支持 Qwopus3.6-35B-A3B 等新模型的结构。现在 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile)
+> 已改为在构建时自动编译最新版 llama.cpp，所有模型统一通过 Docker Compose 启动：
+>
+> ```bash
+> docker compose up -d qwen36-35b-moe
+> ```
+>
+> 宿主机 `~/.local` 下手动安装的 llama.cpp 已同步清除，不再需要维护。
 
 ---
 
