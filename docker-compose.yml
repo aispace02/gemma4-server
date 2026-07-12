@@ -12,6 +12,8 @@ x-llama-common: &llama-common
     context: .
     dockerfile: Dockerfile
   runtime: nvidia
+  devices:
+    - nvidia.com/gpu=all
   network_mode: host
   restart: unless-stopped
   volumes:
@@ -23,12 +25,17 @@ x-llama-common: &llama-common
     - /usr/local/lib:/opt/llama/lib:ro
   environment:
     - HF_ENDPOINT=https://hf-mirror.com
+    # 显式启用 GPU 设备及其所有能力
+    - NVIDIA_VISIBLE_DEVICES=all
+    - NVIDIA_DRIVER_CAPABILITIES=all
     # Jetson UMA 统一内存优化: 允许运行时统一调度 CPU/GPU 内存，
     # 社区实测可带来约 10~15% 的推理性能提升
     - GGML_CUDA_ENABLE_UNIFIED_MEMORY=1
-    # 让容器能找到挂载到 /opt/llama 的二进制和共享库
+    # 让容器能找到挂载到 /opt/llama 的二进制 and 共享库
     - PATH=/opt/llama/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    - LD_LIBRARY_PATH=/opt/llama/lib
+    # 由于禁用了 update-ldcache 挂钩，必须手动将 NVIDIA 驱动相关路径加入链接器搜索路径
+    # 宿主机使用 nvgpu 驱动，因此仅保留 nvgpu 排除 openrm 避免驱动冲突
+    - LD_LIBRARY_PATH=/opt/llama/lib:/usr/lib/aarch64-linux-gnu/nvidia:/opt/nvidia/l4t-gpu-libs/nvgpu
   ulimits:
     memlock:
       soft: -1
