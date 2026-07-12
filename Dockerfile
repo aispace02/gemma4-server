@@ -2,6 +2,17 @@
 # 针对 JetPack 7.2 (L4T 39.2 / Ubuntu 24.04 / CUDA 13.2.1) 的 llama.cpp 镜像
 # 目标平台: NVIDIA Jetson Orin AGX (Ampere, CUDA Compute Capability sm_87)
 #
+# llama.cpp 源码来源:
+#   本镜像使用 git submodule 管理 llama.cpp 源码 (./llama.cpp 目录)。
+#   Docker build 阶段直接 COPY 本地源码进容器，完全不需要访问网络。
+#
+#   手动更新 llama.cpp 到最新版 (在有代理/网络的情况下执行):
+#     cd llama.cpp && git pull          # 仅更新 llama.cpp
+#     # 或:
+#     git submodule update --remote     # 在本仓库根目录执行
+#   更新后重新构建镜像:
+#     docker compose build
+#
 # 背景说明:
 #   JetPack 7.2 (L4T 39.2) 相比 JetPack 6 (L4T 36.x) 是重大版本升级:
 #     - CUDA: 12.6  →  13.2.1
@@ -31,27 +42,25 @@ FROM nvcr.io/nvidia/cuda:13.2.1-devel-ubuntu24.04
 
 # -----------------------------------------------------------------------------
 # 安装编译依赖
+# git 仅供可选调试用途，编译本身不需要网络
 # -----------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git \
         cmake \
         ninja-build \
         build-essential \
         libcurl4-openssl-dev \
-        ccache \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# ccache 加速 (下次重复构建时有效)
-ENV CCACHE_DIR=/tmp/ccache
-ENV PATH="/usr/lib/ccache:${PATH}"
-
 # =============================================================================
-# 编译 llama.cpp (最新 master)
+# 编译 llama.cpp (从本地 submodule 复制，无需网络)
 # =============================================================================
 WORKDIR /opt
 
-RUN git clone --depth=1 https://github.com/ggml-org/llama.cpp.git llama.cpp
+# 将宿主机本地的 llama.cpp submodule 目录复制进镜像
+# 确保在 docker compose build 前已在宿主机完成 submodule 初始化:
+#   git submodule update --init
+COPY llama.cpp/ /opt/llama.cpp/
 
 WORKDIR /opt/llama.cpp
 
@@ -110,7 +119,7 @@ RUN cmake -B build -G Ninja \
         -DLLAMA_CURL=ON \
     && cmake --build build --parallel \
     && cmake --install build --prefix /usr/local \
-    && rm -rf /opt/llama.cpp
+    && rm -rf /opt/llama.cpp/build
 
 # 验证安装
 RUN llama-server --version

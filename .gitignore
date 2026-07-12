@@ -8,3 +8,6 @@ Thumbs.db
 # In case downloads or model files are placed locally
 *.gguf
 *.safetensors
+
+# llama.cpp submodule 编译产物 (build 目录，不提交)
+llama.cpp/build/
