@@ -1,5 +1,12 @@
 x-llama-common: &llama-common
-  image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin
+  # JetPack 7.2 (L4T 39.2 / CUDA 13.2.1 / Ubuntu 24.04) 专用构建
+  # 使用本地 Dockerfile 基于 NVIDIA NGC cuda:13.2.1-devel-ubuntu24.04 编译
+  # 注意: 旧的 ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin 基于
+  #       JetPack 6 / CUDA 12.x 构建，在 JetPack 7.2 上 CUDA ABI 不匹配，
+  #       会导致 "operation not supported" 错误，不可直接使用。
+  build:
+    context: .
+    dockerfile: Dockerfile
   runtime: nvidia
   network_mode: host
   restart: unless-stopped
@@ -7,6 +14,9 @@ x-llama-common: &llama-common
     - /mnt/ssd/huggingface:/root/.cache/huggingface
   environment:
     - HF_ENDPOINT=https://hf-mirror.com
+    # Jetson UMA 统一内存优化: 允许运行时统一调度 CPU/GPU 内存，
+    # 社区实测可带来约 10~15% 的推理性能提升
+    - GGML_CUDA_ENABLE_UNIFIED_MEMORY=1
   ulimits:
     memlock:
       soft: -1

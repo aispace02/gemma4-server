@@ -173,15 +173,51 @@ docker compose logs -f qwen36-35b-moe
 
 ### 5.3. 更新推理引擎`llama.cpp`
 
-```bash
-# 1. 拉取带有 "latest-jetson-orin" 标签的最新镜像
-docker compose pull
+本项目已切换为**自编译最新版 llama.cpp**（详见 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile)）。
+更新方式为重新构建镜像，而不是拉取预编译镜像：
 
-# 2. 重新启动服务（Docker 会自动检测镜像变更，并销毁旧容器创建新容器）
+```bash
+# 重新拉取最新源码并重新编译 (将重新下载 llama.cpp master 并编译)
+docker compose build --no-cache
+
+# 将新镜像应用到服务
 docker compose up -d
 ```
 
-### 5.4. 直接在本地运行 Qwopus3.6-35B-A3B（不使用 Docker）
+### 5.4. 自建镜像说明 (Dockerfile 编译参数详解)
+
+> **⚠️ JetPack 7.2 兼容性说明**
+>
+> 本项目使用的是 **JetPack 7.2 (L4T 39.2 / CUDA 13.2.1 / Ubuntu 24.04)**。
+> 旧的 `ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin` 预编译镜像基于
+> **JetPack 6 / CUDA 12.x** 构建，在 JetPack 7.2 主机上会因 **CUDA ABI 不匹配**
+> 出现 `operation not supported` 错误，**无法直接使用**。
+>
+> 因此 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 改用
+> NVIDIA NGC 官方 **`cuda:13.2.1-devel-ubuntu24.04`** ARM64 镜像作为基础，
+> 在容器内重新编译最新版 llama.cpp，与 JetPack 7.2 环境完全匹配。
+
+[Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 在 NGC CUDA 13.2 devel 镜像基础上，
+编译安装最新 llama.cpp master 分支。主要编译优化参数如下：
+
+| 参数 | 作用 |
+|---|---|
+| `GGML_CUDA=ON` | 启用 CUDA 后端 |
+| `CMAKE_CUDA_ARCHITECTURES=87` | 仅编译 sm_87 (Orin AGX)，缩短编译时间并减小二进制体积 |
+| `GGML_CUDA_F16=ON` | Flash Attention 使用 FP16 Tensor Core，长上下文推理显著加速 |
+| `GGML_CUDA_FA_ALL_QUANTS=ON` | 对所有量化格式均启用 Flash Attention，防止回退到慢路径 |
+| `GGML_CUDA_DMMV_X=64` | 矩阵-向量乘法 X 维并行度，匹配 Orin 2048 CUDA Cores |
+| `GGML_CUDA_MMV_Y=2` | 矩阵-向量乘法 Y 维并行度，社区实测可获得 10~20% 加速 |
+| `GGML_CUDA_NO_VMM=ON` | 禁用 VMM 大块预分配，专为 Jetson UMA 共享内存架构设计，防止 OOM |
+| `LLAMA_CURL=ON` | llama-server 支持从 URL 加载模型 |
+
+运行时还通过 `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 环境变量启用统一内存调度，
+社区实测在 Linux 上可提升推理性能约 **10~15%**。
+
+> **如需回退到官方镜像**：打开 [docker-compose.yml](file:///home/hxf0223/tmp/gemma-server/docker-compose.yml)，
+> 将 `build:` 块注释，取消注释 `image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin` 即可。
+
+### 5.5. 直接在本地运行 Qwopus3.6-35B-A3B（不使用 Docker）
 
 `Qwopus3.6-35B-A3B`是蒸馏了`Claude Opus`得到的。由于模型`Qwopus3.6-35B-A3B`比较新，而在 Jetson Orin 上使用 Docker 安装的 `llama.cpp` 版本有些老旧，不支持该模型中的一些新结构，导致模型加载出错，需要在本地编译最新版的`llama.cpp`，并在本地运行`Qwopus3.6-35B-A3B`。操作命令如下：
 
@@ -190,7 +226,7 @@ git clone https://github.com/ggml-org/llama.cpp.git
 cd llama.cpp
 
 # 编译最新的 llama.cpp，并安装
-cmake -B build -DGGML_CUDA=ON
+cmake -B build -DGGML_CUDA=ON -DGGML_CUDA_F16=ON -DLLAMA_CURL=ON -DGGML_CUDA_FA_ALL_QUANTS=ON -DCMAKE_CUDA_ARCHITECTURES=87 -DGGML_CUDA_DMMV_X=64 -DGGML_CUDA_MMV_Y=2 -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 cmake --install build --prefix ~/.local
 
