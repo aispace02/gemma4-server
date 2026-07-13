@@ -62,6 +62,8 @@ services:
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
+      --n-predict 8192
+      --repeat-penalty 1.1
 
   gemma4-26b-a4b:
     <<: *llama-common
@@ -83,6 +85,8 @@ services:
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
+      --n-predict 8192
+      --repeat-penalty 1.1
 
   gemma4-12b-agentic:
     <<: *llama-common
@@ -104,6 +108,8 @@ services:
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
+      --n-predict 8192
+      --repeat-penalty 1.1
 
   qwen36-35b-moe:
     <<: *llama-common
@@ -125,3 +131,6 @@ services:
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
+      --n-predict 8192
+      --repeat-penalty 1.1
+      --reasoning-preserve
