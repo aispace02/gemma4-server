@@ -216,7 +216,7 @@ docker compose restart
 > **⚠️ JetPack 7.2 / CUDA 13.2 兼容性与 NVIDIA Container Toolkit 报错修复说明**
 >
 > 1. **旧镜像不可用**：旧的 `ghcr.io/nvidia-ai-iot/llama_cpp` 镜像由于基于 JetPack 6 (CUDA 12.x) 构建，在 JetPack 7.2 上会有 CUDA ABI 不兼容报错，因此必须采用本地编译 + Docker 运行的模式。
-> 
+>
 > 2. **CDI Hook Panic 修复**：在 JetPack 7.2 (CUDA 13.2.1 / nvidia-container-toolkit 1.19.1) 上，如果使用默认的 `mode = "auto"` 运行 NVIDIA 容器，在容器启动时会触发 `nvidia-cdi-hook` 的 Bug：
 >    `panic: runtime error: slice bounds out of range [:73] with capacity 71`。
 >    **修复方法**：
@@ -235,29 +235,26 @@ docker compose restart
 >      sudo systemctl restart containerd
 >      sudo systemctl restart docker
 >      ```
-> 
 > 3. **挂载与环境变量调整**：
 >    - [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 使用了 `cuda:13.2.1-runtime-ubuntu24.04` 轻量运行镜像，不含编译步骤。
 >    - llama-server 的二进制和库挂载至容器的 `/opt/llama/bin` 和 `/opt/llama/lib`，避开标准库路径。
 >    - 由于禁用了 `update-ldcache` 钩子，必须在 [docker-compose.yml](file:///home/hxf0223/tmp/gemma-server/docker-compose.yml) 的 `LD_LIBRARY_PATH` 环境变量中手动指定包含 `nvgpu` 用户态驱动路径（如 `/opt/nvidia/l4t-gpu-libs/nvgpu`），**注意不要加入 `openrm` 路径**，否则会导致 CUDA 设备无法识别。
 
-
 **编译参数**（在宿主机执行 cmake 时使用）：
 
-| 参数 | 作用 |
-|---|---|
-| `GGML_CUDA=ON` | 启用 CUDA 后端 |
-| `CMAKE_CUDA_ARCHITECTURES=87` | 仅编译 sm_87 (Orin AGX)，缩短编译时间并减小体积 |
-| `GGML_CUDA_F16=ON` | Flash Attention 使用 FP16 Tensor Core，长上下文推理加速 |
-| `GGML_CUDA_FA_ALL_QUANTS=ON` | 对所有量化格式均启用 Flash Attention，防止回退到慢路径 |
-| `GGML_CUDA_DMMV_X=64` | 矩阵-向量乘法 X 维并行度，匹配 Orin 2048 CUDA Cores |
-| `GGML_CUDA_MMV_Y=2` | 矩阵-向量乘法 Y 维并行度，社区实测可获得 10~20% 加速 |
-| `GGML_CUDA_NO_VMM=ON` | 禁用 VMM 大块预分配，专为 Jetson UMA 共享内存架构设计 |
-| `LLAMA_CURL=ON` | llama-server 支持从 URL 加载模型 |
+| 参数                          | 作用                                                    |
+| ----------------------------- | ------------------------------------------------------- |
+| `GGML_CUDA=ON`                | 启用 CUDA 后端                                          |
+| `CMAKE_CUDA_ARCHITECTURES=87` | 仅编译 sm_87 (Orin AGX)，缩短编译时间并减小体积         |
+| `GGML_CUDA_F16=ON`            | Flash Attention 使用 FP16 Tensor Core，长上下文推理加速 |
+| `GGML_CUDA_FA_ALL_QUANTS=ON`  | 对所有量化格式均启用 Flash Attention，防止回退到慢路径  |
+| `GGML_CUDA_DMMV_X=64`         | 矩阵-向量乘法 X 维并行度，匹配 Orin 2048 CUDA Cores     |
+| `GGML_CUDA_MMV_Y=2`           | 矩阵-向量乘法 Y 维并行度，社区实测可获得 10~20% 加速    |
+| `GGML_CUDA_NO_VMM=ON`         | 禁用 VMM 大块预分配，专为 Jetson UMA 共享内存架构设计   |
+| `LLAMA_CURL=ON`               | llama-server 支持从 URL 加载模型                        |
 
 运行时通过 `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 环境变量启用统一内存调度，
 社区实测可提升推理性能约 **10~15%**。
-
 
 ### 5.5. ~~直接在本地运行 Qwopus3.6-35B-A3B（不使用 Docker）~~ [已废弃]
 
@@ -484,3 +481,9 @@ To insert a newline (multiline text) in the terminal:
 1. **Shortcut Combinations**: Try `Shift + Enter` or `Alt + Enter`.
 2. **Raw Carriage Return (Universal)**: Press `Ctrl + V` followed by `Enter` to input a literal newline character (`\n`) into the prompt.
 3. **Copy-Paste Method**: Draft your multiline text in a local text editor (like Notepad/VS Code), copy it, and paste it into MobaXterm using the right-click menu.
+
+---
+
+## 10. 资源
+
+- [reddit](https://www.reddit.com/)：代替 stackoverflow 社区
