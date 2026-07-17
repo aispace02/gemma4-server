@@ -114,11 +114,45 @@ services:
   qwen36-35b-moe:
     <<: *llama-common
     container_name: qwen36-35b-moe
+    # 官方原版 Qwen3.6-35B-A3B (Unsloth UD-Q4_K_M GGUF)。
+    # 相比社区蒸馏版 (Qwopus3.6-...) 更稳定，为 Qwen 官方 post-train 产物，
+    # 同样具备 agentic coding + thinking preservation 能力，原生 262K 上下文。
+    # 架构 qwen3_5_moe (Gated DeltaNet + Gated Attention + 256 experts)，
+    # 已被当前 llama.cpp (含 LLM_ARCH_QWEN35MOE) 支持。
     command: >
       llama-server
-      -m /root/.cache/huggingface/Qwopus3.6-35B-A3B-v1-MTP-Q4_K_M.gguf
+      -m /root/.cache/huggingface/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf
       --host 0.0.0.0
       --port 8084
+      -ngl 999
+      -c 131072
+      --flash-attn on
+      --cache-type-k q8_0
+      --cache-type-v q4_0
+      -t 8
+      --batch-size 512
+      --ubatch-size 256
+      --mlock
+      --jinja
+      --cache-ram 8192
+      --swa-checkpoints 4
+      --n-predict 8192
+      --repeat-penalty 1.1
+      --reasoning-preserve
+
+  qwen36-27b:
+    <<: *llama-common
+    container_name: qwen36-27b
+    # Qwen 官方原版 Qwen3.6-27B (Unsloth Q4_K_M GGUF) - 全参数 dense 模型。
+    # 与 35B-A3B (MoE,仅激活 3B) 互补：27B 为全参数激活，每 token 计算量更大、
+    # 但对单点推理质量（尤其非 agentic 的通用任务）更扎实稳定。
+    # 架构 qwen3_5 (Gated DeltaNet + Gated Attention 混合层, 64 层 dense)，
+    # 已被当前 llama.cpp (含 LLM_ARCH_QWEN35) 支持。原生 262K 上下文。
+    command: >
+      llama-server
+      -m /root/.cache/huggingface/Qwen3.6-27B-Q4_K_M.gguf
+      --host 0.0.0.0
+      --port 8085
       -ngl 999
       -c 131072
       --flash-attn on
