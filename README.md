@@ -529,3 +529,5 @@ To insert a newline (multiline text) in the terminal:
 ## 10. 资源
 
 - [reddit](https://www.reddit.com/)：代替 stackoverflow 社区
+- [NVIDIA AI IOT](https://github.com/NVIDIA-AI-IOT)：NVIDIA 官方 AI IOT 仓库集合
+- [Jetson Containers Quickstart on NVIDIA Jetson AGX Orin 64GB](https://forums.developer.nvidia.com/t/jetson-containers-quickstart-on-nvidia-jetson-agx-orin-64gb/365700)：值得学习一遍
