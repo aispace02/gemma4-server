@@ -146,6 +146,7 @@ The services run using the `nvidia` runtime and share the host network.
 - **Qwen3.6 27B**: Port `8085` (Qwen 官方原版 27B 全参数 dense 推理模型，全部 27B 参数激活，单点推理质量更扎实，与 MoE 版互补)
 
 > **Qwen3.6 27B vs 35B-A3B 选型**（据[官方 README](https://github.com/QwenLM/Qwen3.6) 定位）：两者同为 Qwen3.6 系列、原生 262K 上下文、支持 thinking preservation，区别在架构与取舍。
+>
 > - **27B（dense，端口 8085）**：全部 27B 参数激活，官方定位 "Flagship-Level Coding"，单次推理质量更扎实、更稳定，适合日常对话与高质量单点任务。代价是每 token 计算量更大、速度相对慢。
 > - **35B-A3B（MoE，端口 8084）**：总参 35B 但每 token 仅激活 3B，官方定位 "Agentic Coding Power"，速度快、长上下文吞吐高，适合智能体/多轮工具调用场景。
 > - **建议**：日常对话与编程用 **27B**；智能体、长上下文、高并发场景用 **35B-A3B**。两者可按需起停，64GB 统一内存任一单独运行均宽裕。
@@ -256,7 +257,6 @@ docker compose restart
 >      sudo systemctl restart containerd
 >      sudo systemctl restart docker
 >      ```
->
 > 3. **挂载与环境变量调整**：
 >    - [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 使用了 `cuda:13.2.1-runtime-ubuntu24.04` 轻量运行镜像，不含编译步骤。
 >    - llama-server 的二进制和库挂载至容器的 `/opt/llama/bin` 和 `/opt/llama/lib`，避开标准库路径。
@@ -509,21 +509,21 @@ tmux attach -t forge
 
 ### 7.4. 常用高级参数
 
-| 参数                        | 默认值      | 说明                                                                                     |
-| --------------------------- | ----------- | ---------------------------------------------------------------------------------------- |
-| `--backend-url`             | —           | 后端 llama-server 的 URL（External Mode 必选）                                           |
-| `--host`                    | `127.0.0.1` | Forge 监听地址。设为 `0.0.0.0` 以允许局域网访问                                          |
-| `--port`                    | `8081`      | Forge 监听端口                                                                           |
-| `--serialize`               | 关          | 串行化请求，单 GPU 必开                                                                  |
-| `--max-retries`             | `3`         | 每个请求的最大重试次数                                                                   |
-| `--max-tool-errors`         | `2`         | 每个请求中允许的最大连续工具调用错误数                                                   |
-| `--backend-timeout`         | `300`       | 后端响应超时（秒），大模型推理慢时可适当增大                                             |
-| `--no-rescue`               | 关          | 禁用救援解析（不推荐）                                                                   |
-| `--inject-respond-tool`     | 关          | 注入合成的 respond() 工具，让小模型保持 tool-calling 模式                                |
-| `--reasoning-replay`        | `none`      | 推理链回放策略：`none`（最省 token）/ `keep-last` / `full`                               |
-| `--budget-mode`             | `backend`   | 上下文预算模式：`backend`（自动从后端获取）/ `manual`（手动指定）                        |
-| `--budget-tokens`           | —           | 手动指定 token 预算（需配合 `--budget-mode manual`）                                     |
-| `-v` / `--verbose`          | 关          | 详细日志输出，调试时必开                                                                 |
+| 参数                    | 默认值      | 说明                                                              |
+| ----------------------- | ----------- | ----------------------------------------------------------------- |
+| `--backend-url`         | —           | 后端 llama-server 的 URL（External Mode 必选）                    |
+| `--host`                | `127.0.0.1` | Forge 监听地址。设为 `0.0.0.0` 以允许局域网访问                   |
+| `--port`                | `8081`      | Forge 监听端口                                                    |
+| `--serialize`           | 关          | 串行化请求，单 GPU 必开                                           |
+| `--max-retries`         | `3`         | 每个请求的最大重试次数                                            |
+| `--max-tool-errors`     | `2`         | 每个请求中允许的最大连续工具调用错误数                            |
+| `--backend-timeout`     | `300`       | 后端响应超时（秒），大模型推理慢时可适当增大                      |
+| `--no-rescue`           | 关          | 禁用救援解析（不推荐）                                            |
+| `--inject-respond-tool` | 关          | 注入合成的 respond() 工具，让小模型保持 tool-calling 模式         |
+| `--reasoning-replay`    | `none`      | 推理链回放策略：`none`（最省 token）/ `keep-last` / `full`        |
+| `--budget-mode`         | `backend`   | 上下文预算模式：`backend`（自动从后端获取）/ `manual`（手动指定） |
+| `--budget-tokens`       | —           | 手动指定 token 预算（需配合 `--budget-mode manual`）              |
+| `-v` / `--verbose`      | 关          | 详细日志输出，调试时必开                                          |
 
 ### 7.5. 客户端配置 — 将编程工具指向 Forge Proxy
 
@@ -594,13 +594,13 @@ curl -sN http://<JETSON_IP>:9084/v1/chat/completions \
 
 ### 7.6. Forge Proxy 端口速查表
 
-| 模型                  | 后端端口 (llama-server) | Forge 代理端口 | 直连 URL                         | Forge URL                        |
-| --------------------- | ----------------------- | -------------- | -------------------------------- | -------------------------------- |
-| Gemma-4 31B           | 8080                    | 9080           | `http://<IP>:8080/v1`            | `http://<IP>:9080/v1`            |
-| Gemma-4 26B-A4B       | 8081                    | 9081           | `http://<IP>:8081/v1`            | `http://<IP>:9081/v1`            |
-| Gemma-4 12B-Agentic   | 8082                    | 9082           | `http://<IP>:8082/v1`            | `http://<IP>:9082/v1`            |
-| Qwen3.6 35B MoE       | 8084                    | 9084           | `http://<IP>:8084/v1`            | `http://<IP>:9084/v1`            |
-| Qwen3.6 27B           | 8085                    | 9085           | `http://<IP>:8085/v1`            | `http://<IP>:9085/v1`            |
+| 模型                | 后端端口 (llama-server) | Forge 代理端口 | 直连 URL              | Forge URL             |
+| ------------------- | ----------------------- | -------------- | --------------------- | --------------------- |
+| Gemma-4 31B         | 8080                    | 9080           | `http://<IP>:8080/v1` | `http://<IP>:9080/v1` |
+| Gemma-4 26B-A4B     | 8081                    | 9081           | `http://<IP>:8081/v1` | `http://<IP>:9081/v1` |
+| Gemma-4 12B-Agentic | 8082                    | 9082           | `http://<IP>:8082/v1` | `http://<IP>:9082/v1` |
+| Qwen3.6 35B MoE     | 8084                    | 9084           | `http://<IP>:8084/v1` | `http://<IP>:9084/v1` |
+| Qwen3.6 27B         | 8085                    | 9085           | `http://<IP>:8085/v1` | `http://<IP>:9085/v1` |
 
 > **选择建议**：日常编程和 tool-calling 场景推荐走 Forge 代理端口；简单对话或不涉及工具调用的场景可直连后端端口。
 
