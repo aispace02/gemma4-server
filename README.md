@@ -250,7 +250,7 @@ docker compose logs -f qwen36-35b-moe
 本项目采用**宿主机编译 + Docker volume 挂载**方案（详见 [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile)）：
 llama.cpp 在宿主机上编译并安装到 `/usr/local`，通过 volume 挂载注入容器，**无需在 Docker 内编译**。
 
-更新 llama.cpp 到最新版（需要代理/网络）：
+更新 llama.cpp 到官方 `master` 最新提交（需要代理/网络）：
 
 ```bash
 # 确认 /usr/local/lib 添加到 ldconfig 搜索路径，如果没有添加，则执行如下添加操作
@@ -260,8 +260,8 @@ sudo ldconfig
 # 首次需要安装编译依赖 Ninja
 sudo apt install ninja-build
 
-# 1. 更新 llama.cpp submodule 源码
-cd llama.cpp && git pull && cd ..
+# 1. 初始化并更新 llama.cpp 子模块到官方 master 最新提交
+git submodule update --init --remote --checkout llama.cpp
 
 # 2. 在宿主机重新编译（使用与现有安装相同的优化参数）
 cmake -B build -G Ninja \
@@ -283,6 +283,8 @@ sudo ldconfig
 # 4. 重启容器即可生效（无需 docker compose build！）
 docker compose restart
 ```
+
+`.gitmodules` 已将 `llama.cpp` 的跟踪分支设置为 `master`，并忽略子模块指针变化。因此每次执行上面的更新命令后，主仓库不会因为子模块切换到了新 commit 而要求再次提交。需要注意：Git 子模块本质上仍然保存一个 commit，`branch = master` 只会影响 `git submodule update --remote` 的目标；新机器首次克隆后仍需执行该命令，才能获取 master 的最新代码。
 
 ### 5.4. 架构说明 (Dockerfile 设计)
 
