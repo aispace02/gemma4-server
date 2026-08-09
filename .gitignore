@@ -11,3 +11,7 @@ Thumbs.db
 
 # llama.cpp submodule 编译产物 (build 目录，不提交)
 llama.cpp/build/
+
+# Python helper scripts
+__pycache__/
+*.py[cod]

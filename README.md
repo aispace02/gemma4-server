@@ -79,7 +79,57 @@ curl -sN http://192.168.137.251:8080/v1/chat/completions \
 
 在大陆网络环境下，直接从 Hugging Face 下载模型可能会非常缓慢或中断。**推荐使用阿里 ModelScope (魔搭社区) 下载**，它可以提供跑满带宽的极速下载体验，且无需配置代理。
 
-### 4.1. 使用 uv 虚拟环境安装 ModelScope (推荐，保持系统干净)
+### 4.1. 使用仓库脚本自动更新（推荐）
+
+仓库提供了 [`scripts/update-models.py`](scripts/update-models.py)，统一维护 Compose 中的模型仓库、文件名和本地路径。脚本只使用中国大陆的 ModelScope，并且会在启动下载器前清除大小写两套 `HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 等代理变量，避免下载请求经过网络代理。
+
+```bash
+# 查看可用的 Compose 服务名
+python3 scripts/update-models.py --list
+
+# 更新一个模型（默认写入 /mnt/ssd/huggingface）
+python3 scripts/update-models.py qwen36-35b-moe
+
+# 也可以一次更新多个模型；--all 会下载全部模型，需预留足够磁盘空间
+python3 scripts/update-models.py gemma4-31b gemma4-12b-agentic
+python3 scripts/update-models.py --all
+
+# 自定义模型目录时，必须同步修改 docker-compose.yml 的 volume 和模型路径
+python3 scripts/update-models.py qwen36-27b --model-dir /path/to/huggingface
+
+# 先检查将要执行的 ModelScope 命令，不产生网络请求
+python3 scripts/update-models.py qwen36-27b --dry-run
+```
+
+脚本会在每个模型下载结束后显示状态，并在最后输出汇总：
+
+- `已更新`：模型文件是新下载的，或下载后本地文件确实发生了替换。
+- `已是最新`：ModelScope 命令执行成功，但本地模型文件没有变化。
+- `失败`：下载命令失败、目标文件不存在或目标文件为空；批量更新会继续处理其余模型，最后以非零退出码结束。
+- `仅演练`：使用 `--dry-run`，只显示命令，不产生下载。
+
+为避免对几十 GiB 的模型再次执行全量哈希，状态判断比较下载前后的文件大小、修改时间和 inode；因此“已是最新”表示下载器检查成功且本地目标文件未发生变化。
+
+示例输出：
+
+```text
+[1/1] Qwen3.6 35B-A3B MoE -> /mnt/ssd/huggingface/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf
+      状态: 已更新（20.41 GiB）
+
+模型更新结果:
+  ✓ qwen36-35b-moe    已更新 Qwen3.6 35B-A3B MoE
+统计：已更新 1 个
+```
+
+如果系统已经安装 `modelscope`，脚本直接调用它；否则会自动使用 `uv run --no-project --with modelscope` 临时运行，不会创建或修改项目虚拟环境。下载成功后再重启对应服务：
+
+```bash
+docker compose restart qwen36-35b-moe
+```
+
+脚本使用的下载后端是开源的 [ModelScope](https://github.com/modelscope/modelscope) 客户端，模型文件来自其中国大陆站点。
+
+### 4.2. 使用 uv 虚拟环境手动安装 ModelScope
 
 如果宿主机上没有全局安装 `modelscope`，推荐使用现代 Python 包管理器 **`uv`** 创建虚拟环境并安装，避免污染系统的 Python 环境。在终端输入以下命令：
 
@@ -90,14 +140,17 @@ uv venv
 # 2. 激活虚拟环境
 source .venv/bin/activate
 
-# 3. 使用 uv 安装 modelscope (速度极快)
-uv pip install modelscope
+# 3. 依赖安装也直连大陆镜像，不继承网络代理
+unset HTTP_PROXY HTTPS_PROXY FTP_PROXY ALL_PROXY
+unset http_proxy https_proxy ftp_proxy all_proxy
+export NO_PROXY='*' no_proxy='*'
+UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple uv pip install modelscope
 ```
 
 > **极速免激活方案**：您也可以完全不激活虚拟环境，直接使用 `uv run` 临时带入运行，效果是一样的：
 > `uv run --with modelscope modelscope download ...`
 
-### 4.2. 从 ModelScope 下载 GGUF 权重到 SSD
+### 4.3. 从 ModelScope 手动下载 GGUF 权重到 SSD
 
 激活虚拟环境后（或使用上面的 `uv run` 方案），利用 `modelscope` 命令行工具，只下载需要的单个 GGUF 文件并保存到缓存路径：
 
@@ -120,10 +173,14 @@ modelscope download --model unsloth/Qwen3.6-27B-GGUF Qwen3.6-27B-Q4_K_M.gguf --l
 
 下载完成后，如果您不再需要该虚拟环境，可以直接输入 `deactivate` 退出虚拟环境，并删除生成的 `.venv` 文件夹（权重已安全地存在了 `/mnt/ssd/huggingface` 下）。
 
-备份方案：如果通过 ModelScope 遇到问题，也可以使用 Hugging Face 的新命令行工具下载：
+备份方案：如果通过 ModelScope 遇到问题，也可以使用 Hugging Face 的新命令行工具下载。下面的写法同样会清除常见代理变量：
 
 ```bash
-pip install -U huggingface_hub && export HF_ENDPOINT=https://hf-mirror.com && hf download unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
+env -u HTTP_PROXY -u HTTPS_PROXY -u FTP_PROXY -u ALL_PROXY \
+    -u http_proxy -u https_proxy -u ftp_proxy -u all_proxy \
+    NO_PROXY='*' no_proxy='*' HF_ENDPOINT=https://hf-mirror.com \
+    hf download unsloth/gemma-4-31B-it-qat-GGUF \
+    gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local-dir /mnt/ssd/huggingface
 ```
 
 - [ModelScope -- Gemma4-12B v2 — 编程 + 智能体版](https://www.modelscope.cn/models/hf/yuxinlu1-gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF) **12B Agentic 版本**：这是由用户 `yuxinlu1` 基于 Gemma-4 12B 进行蒸馏精调的版本，专门针对 AI Agent 和代码分析场景进行了优化微调。虽然是 Q6_K 无损量化，但得益于蒸馏和针对性微调，在实际使用中表现出色，且推理速度更快，非常适合 Jetson Orin 等边缘设备部署。
@@ -208,15 +265,14 @@ cd llama.cpp && git pull && cd ..
 
 # 2. 在宿主机重新编译（使用与现有安装相同的优化参数）
 cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DGGML_NATIVE=ON \
     -DGGML_CUDA=ON \
     -DCMAKE_CUDA_ARCHITECTURES=87 \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DGGML_CUDA_F16=ON \
+    -DGGML_CUDA_FA=ON \
     -DGGML_CUDA_FA_ALL_QUANTS=ON \
-    -DGGML_CUDA_DMMV_X=64 \
-    -DGGML_CUDA_MMV_Y=2 \
-    -DGGML_CUDA_NO_VMM=ON \
-    -DLLAMA_CURL=ON
+    -DGGML_CUDA_GRAPHS=ON \
+    -DGGML_CUDA_NO_VMM=ON
 
 cmake --build build --config Release --parallel
 
@@ -257,6 +313,7 @@ docker compose restart
 >      sudo systemctl restart containerd
 >      sudo systemctl restart docker
 >      ```
+>
 > 3. **挂载与环境变量调整**：
 >    - [Dockerfile](file:///home/hxf0223/tmp/gemma-server/Dockerfile) 使用了 `cuda:13.2.1-runtime-ubuntu24.04` 轻量运行镜像，不含编译步骤。
 >    - llama-server 的二进制和库挂载至容器的 `/opt/llama/bin` 和 `/opt/llama/lib`，避开标准库路径。
