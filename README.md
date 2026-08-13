@@ -114,11 +114,11 @@ python3 scripts/update-models.py qwen36-27b --dry-run
 
 ```text
 [1/1] Qwen3.6 35B-A3B MoE -> /mnt/ssd/huggingface/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf
-      状态: 已更新（20.41 GiB）
+      状态: 已是最新（20.61 GiB | 本地: 2026-07-09 | 远端文件: 2026-04-17）
 
 模型更新结果:
-  ✓ qwen36-35b-moe    已更新 Qwen3.6 35B-A3B MoE
-统计：已更新 1 个
+  = qwen36-35b-moe       已是最新   [本地: 2026-07-09 | 远端文件: 2026-04-17] Qwen3.6 35B-A3B MoE
+统计：已是最新 1 个
 ```
 
 如果系统已经安装 `modelscope`，脚本直接调用它；否则会自动使用 `uv run --no-project --with modelscope` 临时运行，不会创建或修改项目虚拟环境。下载成功后再重启对应服务：

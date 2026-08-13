@@ -12,12 +12,16 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import datetime
+import json
 import os
 from pathlib import Path
 import shlex
 import shutil
 import subprocess
 import sys
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 
 
@@ -51,6 +55,8 @@ class ModelResult:
     status: str
     target: Path
     size: int | None = None
+    local_date: str | None = None
+    remote_date: str | None = None
     detail: str = ""
 
 
@@ -229,6 +235,76 @@ def file_was_changed(before: FileSnapshot | None, after: FileSnapshot) -> bool:
     )
 
 
+def format_mtime(mtime_ns: int) -> str:
+    """Format nanosecond timestamp to YYYY-MM-DD string in local time."""
+
+    dt = datetime.datetime.fromtimestamp(
+        mtime_ns / 1e9, tz=datetime.timezone.utc
+    ).astimezone()
+    return dt.strftime("%Y-%m-%d")
+
+
+def print_date_check(local_date: str | None, remote_date: str | None) -> None:
+    """Explain the coarse date comparison before the downloader runs."""
+
+    if not remote_date:
+        return
+    if not local_date:
+        print(f"      日期判断: 本地文件不存在，远端文件: {remote_date}")
+    elif remote_date > local_date:
+        print(
+            f"      日期判断: 远端文件较新（本地: {local_date} | 远端文件: {remote_date}），"
+            "将检查并下载"
+        )
+    else:
+        print(
+            f"      日期判断: 本地日期不早于远端文件（本地: {local_date} | "
+            f"远端文件: {remote_date}）"
+        )
+
+
+def fetch_remote_file_date(repository: str, filename: str) -> str | None:
+    """Fetch the target file's commit date from ModelScope's file API.
+
+    The repository's ``LastUpdatedTime`` can be changed by README or metadata
+    edits, which is not sufficient to tell whether the GGUF being downloaded
+    changed.  The file listing contains a ``CommittedDate`` for each file.
+    """
+
+    query = urllib.parse.urlencode({"Revision": "master", "Recursive": "true"})
+    url = f"https://www.modelscope.cn/api/v1/models/{repository}/repo/files?{query}"
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "ModelScope-UpdateScript/1.0"},
+    )
+    handler = urllib.request.ProxyHandler({})
+    opener = urllib.request.build_opener(handler)
+    try:
+        with opener.open(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8")).get("Data", {})
+            files = data.get("Files", [])
+            remote_file = next(
+                (
+                    item
+                    for item in files
+                    if item.get("Path") == filename
+                    or item.get("Name") == filename
+                ),
+                None,
+            )
+            committed = remote_file.get("CommittedDate") if remote_file else None
+            if isinstance(committed, (int, float)):
+                dt = datetime.datetime.fromtimestamp(
+                    committed, tz=datetime.timezone.utc
+                ).astimezone()
+                return dt.strftime("%Y-%m-%d")
+            elif isinstance(committed, str) and len(committed) >= 10:
+                return committed[:10]
+    except Exception:
+        pass
+    return None
+
+
 def download_model(
     spec: ModelSpec,
     command_prefix: list[str],
@@ -253,12 +329,24 @@ def download_model(
     target = model_dir / spec.filename
     print(f"[{ordinal}] {spec.description} -> {target}")
     print(f"      ModelScope: {spec.repository}/{spec.filename}")
+
+    remote_date = fetch_remote_file_date(spec.repository, spec.filename)
+    before_check = file_snapshot(target)
+    local_date = format_mtime(before_check.mtime_ns) if before_check else None
+    print_date_check(local_date, remote_date)
+
     if dry_run:
         print(f"      dry-run: {shlex.join(command)}")
         print(f"      状态: {STATUS_DRY_RUN}")
-        return ModelResult(spec, STATUS_DRY_RUN, target)
+        return ModelResult(
+            spec,
+            STATUS_DRY_RUN,
+            target,
+            local_date=local_date,
+            remote_date=remote_date,
+        )
 
-    before = file_snapshot(target)
+    before = before_check
 
     result = subprocess.run(command, env=environment, check=False)
     if result.returncode != 0:
@@ -276,8 +364,22 @@ def download_model(
         raise RuntimeError(f"目标文件为空，已停止: {target}")
 
     status = STATUS_UPDATED if file_was_changed(before, after) else STATUS_UNCHANGED
-    print(f"      状态: {status}（{after.size / (1024**3):.2f} GiB）")
-    return ModelResult(spec, status, target, size=after.size)
+    local_date = format_mtime(after.mtime_ns)
+
+    date_parts = [f"本地: {local_date}"]
+    if remote_date:
+        date_parts.append(f"远端文件: {remote_date}")
+    date_str = " | ".join(date_parts)
+
+    print(f"      状态: {status}（{after.size / (1024**3):.2f} GiB | {date_str}）")
+    return ModelResult(
+        spec,
+        status,
+        target,
+        size=after.size,
+        local_date=local_date,
+        remote_date=remote_date,
+    )
 
 
 def print_summary(results: list[ModelResult]) -> None:
@@ -293,9 +395,21 @@ def print_summary(results: list[ModelResult]) -> None:
     print("\n模型更新结果:")
     for result in results:
         symbol = symbols[result.status]
+
+        date_parts = []
+        if result.local_date:
+            date_parts.append(f"本地: {result.local_date}")
+        else:
+            date_parts.append("本地: 未下载")
+
+        if result.remote_date:
+            date_parts.append(f"远端文件: {result.remote_date}")
+
+        date_str = f"[{' | '.join(date_parts)}]"
+
         print(
             f"  {symbol} {result.spec.service:20} "
-            f"{result.status:6} {result.spec.description}"
+            f"{result.status:6} {date_str:27} {result.spec.description}"
         )
         if result.detail:
             print(f"      {result.detail}")
@@ -386,12 +500,17 @@ def main(argv: list[str] | None = None) -> int:
                 )
             except (OSError, RuntimeError) as error:
                 target = args.model_dir / spec.filename
+                snap = file_snapshot(target)
+                local_date = format_mtime(snap.mtime_ns) if snap else None
+                remote_date = fetch_remote_file_date(spec.repository, spec.filename)
                 print(f"      状态: {STATUS_FAILED} — {error}", file=sys.stderr)
                 results.append(
                     ModelResult(
                         spec,
                         STATUS_FAILED,
                         target,
+                        local_date=local_date,
+                        remote_date=remote_date,
                         detail=str(error),
                     )
                 )
