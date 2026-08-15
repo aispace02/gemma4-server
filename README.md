@@ -428,8 +428,8 @@ docker compose restart
         {
           "id": "qwen3.8-27b",
           "name": "Local Qwen3.8 27B",
-          "contextWindow": 131072,
-          "maxOutputTokens": 16384,
+          "contextWindow": 262144,
+          "maxOutputTokens": 8192,
           "input": ["text"]
         }
       ]
