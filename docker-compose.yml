@@ -166,5 +166,7 @@ services:
       --cache-ram 8192
       --swa-checkpoints 4
       --n-predict 8192
-      --repeat-penalty 1.1
+      --repeat-penalty 1.0
+      --top-k 20
+      --min-p 0.0
       --reasoning-preserve
