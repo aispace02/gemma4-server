@@ -92,10 +92,10 @@ MODEL_SPECS = (
         "Qwen3.6 35B-A3B MoE",
     ),
     ModelSpec(
-        "qwen36-27b",
-        "unsloth/Qwen3.6-27B-GGUF",
-        "Qwen3.6-27B-Q4_K_M.gguf",
-        "Qwen3.6 27B Dense",
+        "qwen38-27b",
+        "unsloth/Qwen3.8-27B-GGUF",
+        "Qwen3.8-27B-Q4_K_M.gguf",
+        "Qwen3.8 27B Dense",
     ),
 )
 

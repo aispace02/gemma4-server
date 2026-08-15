@@ -95,10 +95,10 @@ python3 scripts/update-models.py gemma4-31b gemma4-12b-agentic
 python3 scripts/update-models.py --all
 
 # 自定义模型目录时，必须同步修改 docker-compose.yml 的 volume 和模型路径
-python3 scripts/update-models.py qwen36-27b --model-dir /path/to/huggingface
+python3 scripts/update-models.py qwen38-27b --model-dir /path/to/huggingface
 
 # 先检查将要执行的 ModelScope 命令，不产生网络请求
-python3 scripts/update-models.py qwen36-27b --dry-run
+python3 scripts/update-models.py qwen38-27b --dry-run
 ```
 
 脚本会在每个模型下载结束后显示状态，并在最后输出汇总：
@@ -167,8 +167,8 @@ modelscope download --model hf/yuxinlu1-gemma-4-12B-agentic-fable5-composer2.5-v
 # Qwen3.6-35B-A3B (Qwen 官方原版 MoE 推理模型 - Unsloth UD-Q4_K_M 动态量化)
 modelscope download --model unsloth/Qwen3.6-35B-A3B-GGUF Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --local_dir /mnt/ssd/huggingface
 
-# Qwen3.6-27B (Qwen 官方原版全参数 dense 推理模型 - Unsloth Q4_K_M 量化)
-modelscope download --model unsloth/Qwen3.6-27B-GGUF Qwen3.6-27B-Q4_K_M.gguf --local_dir /mnt/ssd/huggingface
+# Qwen3.8-27B (Qwen 官方原版全参数 dense 推理模型 - Unsloth Q4_K_M 量化)
+modelscope download --model unsloth/Qwen3.8-27B-GGUF Qwen3.8-27B-Q4_K_M.gguf --local_dir /mnt/ssd/huggingface
 ```
 
 下载完成后，如果您不再需要该虚拟环境，可以直接输入 `deactivate` 退出虚拟环境，并删除生成的 `.venv` 文件夹（权重已安全地存在了 `/mnt/ssd/huggingface` 下）。
@@ -188,7 +188,7 @@ env -u HTTP_PROXY -u HTTPS_PROXY -u FTP_PROXY -u ALL_PROXY \
 
 - [ModelScope -- Qwen3.6-35B-A3B-GGUF (Unsloth)](https://www.modelscope.cn/models/unsloth/Qwen3.6-35B-A3B-GGUF) **Qwen3.6 官方原版**：Qwen 官方 post-train 的 35B MoE 推理模型（总参 35B / 激活 3B），原生 262K 上下文，架构 `qwen3_5_moe`（Gated DeltaNet + Gated Attention 混合层 + 256 experts）。具备 agentic coding 与 thinking preservation 能力。此处使用 Unsloth 动态量化 `UD-Q4_K_M`（约 21GB），显存占用与本机其它大模型相当。相比社区蒸馏版（如 Qwopus3.6）更稳定可靠，是日常对话与编程的首选。
 
-- [ModelScope -- Qwen3.6-27B-GGUF (Unsloth)](https://www.modelscope.cn/models/unsloth/Qwen3.6-27B-GGUF) **Qwen3.6 全参数 dense 版**：Qwen 官方 post-train 的 27B 全参数 dense 推理模型（**非 MoE，全部 27B 参数激活**），与 35B-A3B（MoE，仅激活 3B）形成互补。架构 `qwen3_5`（Gated DeltaNet + Gated Attention 混合层，64 层 dense），原生 262K 上下文，已被当前 llama.cpp（含 `LLM_ARCH_QWEN35`）支持。全参数激活使其对单点推理质量（尤其非 agentic 通用任务）更扎实稳定，代价是每 token 计算量大于 MoE 版。此处使用 Unsloth `Q4_K_M`（约 16GB），在 Jetson Orin AGX 64GB 统一内存下运行宽裕。
+- [ModelScope -- Qwen3.8-27B-GGUF (Unsloth)](https://www.modelscope.cn/models/unsloth/Qwen3.8-27B-GGUF) **Qwen3.8 全参数 dense 版**：Qwen 官方 post-train 的 27B 全参数 dense 推理模型（**非 MoE，全部 27B 参数激活**），与 35B-A3B（MoE，仅激活 3B）形成互补。架构 `qwen3_5`（Gated DeltaNet + Gated Attention 混合层，64 层 dense），原生 262K 上下文，已被当前 llama.cpp（含 `LLM_ARCH_QWEN35`）支持。全参数激活使其对单点推理质量（尤其非 agentic 通用任务）更扎实稳定，代价是每 token 计算量大于 MoE 版。此处使用 Unsloth `Q4_K_M`（约 16GB），在 Jetson Orin AGX 64GB 统一内存下运行宽裕。
 
 ---
 
@@ -200,9 +200,9 @@ The services run using the `nvidia` runtime and share the host network.
 - **Gemma-4 26B-A4B**: Port `8081`
 - **Gemma-4 12B-Agentic**: Port `8082` (针对 AI Agent、代码分析深度微调的 12B 无损量化版)
 - **Qwen3.6 35B MoE**: Port `8084` (Qwen 官方原版 35B MoE 推理模型，总参 35B/激活 3B，原生 262K 上下文，稳定可靠，日常对话与编程首选)
-- **Qwen3.6 27B**: Port `8085` (Qwen 官方原版 27B 全参数 dense 推理模型，全部 27B 参数激活，单点推理质量更扎实，与 MoE 版互补)
+- **Qwen3.8 27B**: Port `8085` (Qwen 官方原版 27B 全参数 dense 推理模型，全部 27B 参数激活，单点推理质量更扎实，与 MoE 版互补)
 
-> **Qwen3.6 27B vs 35B-A3B 选型**（据[官方 README](https://github.com/QwenLM/Qwen3.6) 定位）：两者同为 Qwen3.6 系列、原生 262K 上下文、支持 thinking preservation，区别在架构与取舍。
+> **Qwen3.8 27B vs 35B-A3B 选型**（据[官方 README](https://github.com/QwenLM/Qwen3.8) 定位）：两者同为 Qwen3 系列、原生 262K 上下文、支持 thinking preservation，区别在架构与取舍。
 >
 > - **27B（dense，端口 8085）**：全部 27B 参数激活，官方定位 "Flagship-Level Coding"，单次推理质量更扎实、更稳定，适合日常对话与高质量单点任务。代价是每 token 计算量更大、速度相对慢。
 > - **35B-A3B（MoE，端口 8084）**：总参 35B 但每 token 仅激活 3B，官方定位 "Agentic Coding Power"，速度快、长上下文吞吐高，适合智能体/多轮工具调用场景。
@@ -223,8 +223,8 @@ docker compose up -d gemma4-12b-agentic
 # Start the Qwen3.6 35B MoE server
 docker compose up -d qwen36-35b-moe
 
-# Start the Qwen3.6 27B server
-docker compose up -d qwen36-27b
+# Start the Qwen3.8 27B server
+docker compose up -d qwen38-27b
 
 # Stop the services
 docker compose down
@@ -420,14 +420,14 @@ docker compose restart
         }
       ]
     },
-    "local-qwen36-27b": {
+    "local-qwen38-27b": {
       "baseUrl": "http://localhost:8085/v1",
       "api": "openai-completions",
       "apiKey": "not-needed",
       "models": [
         {
-          "id": "qwen3.6-27b",
-          "name": "Local Qwen3.6 27B",
+          "id": "qwen3.8-27b",
+          "name": "Local Qwen3.8 27B",
           "contextWindow": 131072,
           "maxOutputTokens": 16384,
           "input": ["text"]
@@ -469,8 +469,8 @@ _注：建议将 `defaultThinkingLevel` 设为 `"off"` 以确保本地运行流�
 #切换到 Qwen3.6 35B MoE 模型 (推荐，官方原版，稳定可靠，智能体推荐)
 /model local-qwen36-35b-moe/qwen3.6-35b-moe
 
-#切换到 Qwen3.6 27B 模型 (全参数 dense，单点推理质量更扎实)
-/model local-qwen36-27b/qwen3.6-27b
+#切换到 Qwen3.8 27B 模型 (全参数 dense，单点推理质量更扎实)
+/model local-qwen38-27b/qwen3.8-27b
 ```
 
 ---
