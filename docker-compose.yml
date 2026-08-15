@@ -154,7 +154,7 @@ services:
       --host 0.0.0.0
       --port 8085
       -ngl 999
-      -c 131072
+      -c 262144
       --flash-attn on
       --cache-type-k q8_0
       --cache-type-v q4_0
@@ -166,6 +166,7 @@ services:
       --cache-ram 8192
       --swa-checkpoints 4
       --n-predict 8192
+      --temperature 1.0
       --repeat-penalty 1.0
       --top-k 20
       --min-p 0.0
