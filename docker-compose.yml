@@ -58,7 +58,7 @@ services:
       -t 8
       --batch-size 512
       --ubatch-size 256
-      --mlock
+      --load-mode mlock
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
@@ -81,7 +81,7 @@ services:
       -t 8
       --batch-size 512
       --ubatch-size 256
-      --mlock
+      --load-mode mlock
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
@@ -104,7 +104,7 @@ services:
       -t 8
       --batch-size 512
       --ubatch-size 256
-      --mlock
+      --load-mode mlock
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
@@ -132,7 +132,7 @@ services:
       -t 8
       --batch-size 512
       --ubatch-size 256
-      --mlock
+      --load-mode mlock
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
@@ -161,7 +161,7 @@ services:
       -t 8
       --batch-size 512
       --ubatch-size 256
-      --mlock
+      --load-mode mlock
       --jinja
       --cache-ram 8192
       --swa-checkpoints 4
