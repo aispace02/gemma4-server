@@ -373,7 +373,7 @@ docker compose restart
           "name": "Local Gemma-4 31B",
           "id": "gemma-4-31B",
           "contextWindow": 65536,
-          "maxOutputTokens": 16384,
+          "maxOutputTokens": 8192,
           "input": ["text"]
         }
       ]
@@ -401,7 +401,7 @@ docker compose restart
           "id": "gemma-4-12b-agentic",
           "name": "Local Gemma-4 12B Agentic",
           "contextWindow": 65536,
-          "maxOutputTokens": 16384,
+          "maxOutputTokens": 8192,
           "input": ["text"]
         }
       ]
@@ -415,7 +415,7 @@ docker compose restart
           "id": "qwen3.6-35b-moe",
           "name": "Local Qwen3.6 35B MoE",
           "contextWindow": 131072,
-          "maxOutputTokens": 16384,
+          "maxOutputTokens": 8192,
           "input": ["text"]
         }
       ]
