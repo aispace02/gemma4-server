@@ -243,6 +243,7 @@ docker compose logs -f gemma4-31b
 docker compose logs -f gemma4-26b-a4b
 docker compose logs -f gemma4-12b-agentic
 docker compose logs -f qwen36-35b-moe
+docker compose logs -f qwen38-27b
 ```
 
 ### 5.3. 更新推理引擎 `llama.cpp`
@@ -365,9 +366,13 @@ docker compose restart
 {
   "providers": {
     "local-gemma-31b": {
-      "baseUrl": "http://localhost:8080/v1",
+      "baseUrl": "http://192.168.137.13:8080/v1",
       "api": "openai-completions",
       "apiKey": "not-needed",
+      "compat": {
+        "supportsLongCacheRetention": true,
+        "sendSessionAffinityHeaders": true
+      },
       "models": [
         {
           "name": "Local Gemma-4 31B",
@@ -379,9 +384,13 @@ docker compose restart
       ]
     },
     "local-gemma-26b": {
-      "baseUrl": "http://localhost:8081/v1",
+      "baseUrl": "http://192.168.137.13:8081/v1",
       "api": "openai-completions",
       "apiKey": "not-needed",
+      "compat": {
+        "supportsLongCacheRetention": true,
+        "sendSessionAffinityHeaders": true
+      },
       "models": [
         {
           "id": "gemma-4-26B",
@@ -393,9 +402,13 @@ docker compose restart
       ]
     },
     "local-gemma-12b-agentic": {
-      "baseUrl": "http://localhost:8082/v1",
+      "baseUrl": "http://192.168.137.13:8082/v1",
       "api": "openai-completions",
       "apiKey": "not-needed",
+      "compat": {
+        "supportsLongCacheRetention": true,
+        "sendSessionAffinityHeaders": true
+      },
       "models": [
         {
           "id": "gemma-4-12b-agentic",
@@ -407,7 +420,7 @@ docker compose restart
       ]
     },
     "local-qwen36-35b-moe": {
-      "baseUrl": "http://localhost:8084/v1",
+      "baseUrl": "http://192.168.137.13:8084/v1",
       "api": "openai-completions",
       "apiKey": "not-needed",
       "models": [
@@ -421,9 +434,13 @@ docker compose restart
       ]
     },
     "local-qwen38-27b": {
-      "baseUrl": "http://localhost:8085/v1",
+      "baseUrl": "http://192.168.137.13:8085/v1",
       "api": "openai-completions",
       "apiKey": "not-needed",
+      "compat": {
+        "supportsLongCacheRetention": true,
+        "sendSessionAffinityHeaders": true
+      },
       "models": [
         {
           "id": "qwen3.8-27b",
