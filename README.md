@@ -364,9 +364,12 @@ docker compose restart
 
 ---
 
-## 6. 接入 Pi Agent 配置 (Connecting to Pi Agent)
+## 6. 接入 Pi Agent 以 prime-agent
 
-如果需要将本地部署的 Gemma-4 接入开源终端编程助手 **Pi Agent (`pi-coding-agent`)**，请按照以下步骤进行配置：
+> 1. 完整的 `Pi` 的配置见 `backup/pi-agent` 子目录。
+> 2. 完整的接入 `prime-agent` 的配置见 `backup/prime-agent` 子目录。
+
+如果需要将本地部署的 `LLM` 接入开源终端编程助手 **Pi Agent (`pi-coding-agent`)**，请按照以下步骤进行配置：
 
 ### 6.1. 配置自定义模型接口 (`~/.pi/agent/models.json`)
 

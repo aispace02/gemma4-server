@@ -1,0 +1,119 @@
+{
+  "providers": {
+    "local-gemma-31b": {
+      "baseUrl": "http://192.168.137.13:8080/v1",
+      "api": "openai-completions",
+      "apiKey": "not-needed",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "supportsStrictMode": false
+      },
+      "models": [
+        {
+          "id": "gemma-4-31B",
+          "name": "Local Gemma-4 31B",
+          "contextWindow": 65536,
+          "input": [
+            "text"
+          ],
+          "maxTokens": 8192
+        }
+      ]
+    },
+    "local-gemma-26b": {
+      "baseUrl": "http://192.168.137.13:8081/v1",
+      "api": "openai-completions",
+      "apiKey": "not-needed",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "supportsStrictMode": false
+      },
+      "models": [
+        {
+          "id": "gemma-4-26B",
+          "name": "Local Gemma-4 26B",
+          "contextWindow": 8192,
+          "input": [
+            "text"
+          ],
+          "maxTokens": 2048
+        }
+      ]
+    },
+    "local-gemma-12b-agentic": {
+      "baseUrl": "http://192.168.137.13:8082/v1",
+      "api": "openai-completions",
+      "apiKey": "not-needed",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "supportsStrictMode": false
+      },
+      "models": [
+        {
+          "id": "gemma-4-12b-agentic",
+          "name": "Local Gemma-4 12B Agentic",
+          "contextWindow": 65536,
+          "input": [
+            "text"
+          ],
+          "maxTokens": 8192
+        }
+      ]
+    },
+    "local-qwen36-35b-moe": {
+      "baseUrl": "http://192.168.137.13:8084/v1",
+      "api": "openai-completions",
+      "apiKey": "not-needed",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "supportsStrictMode": false
+      },
+      "models": [
+        {
+          "id": "qwen3.6-35b-moe",
+          "name": "Local Qwen-3.6 35B MoE",
+          "contextWindow": 131072,
+          "input": [
+            "text"
+          ],
+          "maxTokens": 8192
+        }
+      ]
+    },
+    "local-qwen38-27b": {
+      "baseUrl": "http://192.168.137.13:8085/v1",
+      "api": "openai-completions",
+      "apiKey": "not-needed",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "supportsStrictMode": false
+      },
+      "models": [
+        {
+          "id": "qwen3.8-27b",
+          "name": "Local Qwen3.8 27B",
+          "contextWindow": 262144,
+          "input": [
+            "text"
+          ],
+          "maxTokens": 8192
+        }
+      ]
+    }
+  }
+}
