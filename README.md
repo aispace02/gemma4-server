@@ -12,11 +12,11 @@ This repository contains Docker Compose configurations to deploy and run Gemma-4
 
 ## 1. 什么是“量化感知训练”版本 (Quantization-Aware Training - QAT) ？
 
-我们默认推荐并配置了 Gemma-4 31B 和 26B-A4B 的 **QAT (Quantization-Aware Training) 量化感知训练**版本（即文件名中的 `-qat`），其优势如下：
+我们默认推荐 Gemma-4 31B 的 **QAT (Quantization-Aware Training) 量化感知训练**版本，以及 26B-A4B 的 **Unsloth Dynamic UD-Q4_K_XL + MTP** 版本。
 
 - **区别于传统量化 (PTQ)**：传统的 Post-Training Quantization (如常见的 `Q4_K_M`) 是直接对训练好的高精度权重进行截断压缩，这会导致模型（特别是数学、代码等强逻辑能力）出现明显的智力下降。
 - **高精度、零损失**：QAT 是由 Google DeepMind 和 Unsloth 联合开发的技术。在模型微调/训练阶段就提前引入了量化误差的模拟，使模型在训练中自我适应 4-bit 环境。最终转换为 `UD-Q4_K_XL` 格式后，其**推理准确度几乎与原始未量化的 bfloat16 权重完全一致**。
-- **显存极大节省**：31B QAT 版本在保持原版精度的前提下，显存开销仅需约 **18GB - 20GB**；26B-A4B 版本（MoE 混合专家架构，每次仅激活 4B 参数）更是只需要 **15GB - 18GB** 显存，是 Jetson Orin 等嵌入式边缘设备运行大模型的最优解。
+- **显存极大节省**：31B QAT 版本在保持原版精度的前提下，显存开销仅需约 **18GB - 20GB**；26B-A4B Dynamic 4-bit 主模型约 **17GB**，另有约 **0.46GB** 的 Q8_0 MTP 侧文件。26B-A4B 是 MoE 架构，每次仅激活约 4B 参数，适合 Jetson Orin 等嵌入式设备。
 
 ---
 
@@ -156,19 +156,30 @@ UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple uv pip install modelsc
 
 ```bash
 # Gemma-4 31B (Dense QAT GGUF)
-modelscope download --model unsloth/gemma-4-31B-it-qat-GGUF gemma-4-31B-it-qat-UD-Q4_K_XL.gguf --local_dir /mnt/ssd/huggingface
+modelscope download unsloth/gemma-4-31B-it-qat-GGUF \
+    gemma-4-31B-it-qat-UD-Q4_K_XL.gguf \
+    --local-dir /mnt/ssd/huggingface --max-workers 1
 
-#Gemma-4 26B-A4B (MoE QAT GGUF)
-modelscope download --model unsloth/gemma-4-26B-A4B-it-qat-GGUF gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf --local_dir /mnt/ssd/huggingface
+# Gemma-4 26B-A4B (Unsloth UD-Q4_K_XL + MTP)
+modelscope download unsloth/gemma-4-26B-A4B-it-GGUF \
+    gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf \
+    MTP/mtp-gemma-4-26B-A4B-it-Q8_0.gguf \
+    --local-dir /mnt/ssd/huggingface --max-workers 1
 
 # Gemma-4 12B-Agentic (蒸馏精调编程版本 - yuxinlu1 - Q6_K无损量化)
-modelscope download --model hf/yuxinlu1-gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF gemma4-v2-Q6_K.gguf --local_dir /mnt/ssd/huggingface
+modelscope download hf/yuxinlu1-gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF \
+    gemma4-v2-Q6_K.gguf --local-dir /mnt/ssd/huggingface --max-workers 1
 
 # Qwen3.6-35B-A3B (Qwen 官方原版 MoE 推理模型 - Unsloth UD-Q4_K_M 动态量化)
-modelscope download --model unsloth/Qwen3.6-35B-A3B-GGUF Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --local_dir /mnt/ssd/huggingface
+modelscope download unsloth/Qwen3.6-35B-A3B-GGUF \
+    Qwen3.6-35B-A3B-UD-Q4_K_M.gguf \
+    --local-dir /mnt/ssd/huggingface --max-workers 1
 
-# Qwen3.8-27B (Qwen 官方原版全参数 dense 推理模型 - Unsloth Q4_K_M 量化)
-modelscope download --model unsloth/Qwen3.8-27B-GGUF Qwen3.8-27B-Q4_K_M.gguf --local_dir /mnt/ssd/huggingface
+# Qwen3.8-27B (Unsloth Dynamic V3.0 UD-Q4_K_XL + MTP)
+modelscope download unsloth/Qwen3.8-27B-GGUF \
+    Qwen3.8-27B-UD-Q4_K_XL.gguf \
+    MTP/mtp-Qwen3.8-27B-Q4_0.gguf \
+    --local-dir /mnt/ssd/huggingface --max-workers 1
 ```
 
 下载完成后，如果您不再需要该虚拟环境，可以直接输入 `deactivate` 退出虚拟环境，并删除生成的 `.venv` 文件夹（权重已安全地存在了 `/mnt/ssd/huggingface` 下）。
@@ -188,7 +199,7 @@ env -u HTTP_PROXY -u HTTPS_PROXY -u FTP_PROXY -u ALL_PROXY \
 
 - [ModelScope -- Qwen3.6-35B-A3B-GGUF (Unsloth)](https://www.modelscope.cn/models/unsloth/Qwen3.6-35B-A3B-GGUF) **Qwen3.6 官方原版**：Qwen 官方 post-train 的 35B MoE 推理模型（总参 35B / 激活 3B），原生 262K 上下文，架构 `qwen3_5_moe`（Gated DeltaNet + Gated Attention 混合层 + 256 experts）。具备 agentic coding 与 thinking preservation 能力。此处使用 Unsloth 动态量化 `UD-Q4_K_M`（约 21GB），显存占用与本机其它大模型相当。相比社区蒸馏版（如 Qwopus3.6）更稳定可靠，是日常对话与编程的首选。
 
-- [ModelScope -- Qwen3.8-27B-GGUF (Unsloth)](https://www.modelscope.cn/models/unsloth/Qwen3.8-27B-GGUF) **Qwen3.8 全参数 dense 版**：Qwen 官方 post-train 的 27B 全参数 dense 推理模型（**非 MoE，全部 27B 参数激活**），与 35B-A3B（MoE，仅激活 3B）形成互补。架构 `qwen3_5`（Gated DeltaNet + Gated Attention 混合层，64 层 dense），原生 262K 上下文，已被当前 llama.cpp（含 `LLM_ARCH_QWEN35`）支持。全参数激活使其对单点推理质量（尤其非 agentic 通用任务）更扎实稳定，代价是每 token 计算量大于 MoE 版。此处使用 Unsloth `Q4_K_M`（约 16GB），在 Jetson Orin AGX 64GB 统一内存下运行宽裕。
+- [ModelScope -- Qwen3.8-27B-GGUF (Unsloth)](https://www.modelscope.cn/models/unsloth/Qwen3.8-27B-GGUF) **Qwen3.8 全参数 dense 版**：Qwen 官方 post-train 的 27B 全参数 dense 推理模型（**非 MoE，全部 27B 参数激活**），与 35B-A3B（MoE，仅激活 3B）形成互补。架构 `qwen3_5`（Gated DeltaNet + Gated Attention 混合层，64 层 dense），原生 262K 上下文，已被当前 llama.cpp（含 `LLM_ARCH_QWEN35`）支持。全参数激活使其对单点推理质量（尤其非 agentic 通用任务）更扎实稳定，代价是每 token 计算量大于 MoE 版。此处使用 Unsloth Dynamic V3.0 `UD-Q4_K_XL`（约 17.6GB），并启用 MTP。
 
 ---
 
@@ -265,7 +276,7 @@ sudo apt install ninja-build
 git submodule update --init --remote --checkout llama.cpp
 
 # 2. 在宿主机重新编译（使用与现有安装相同的优化参数）
-cmake -B build -G Ninja \
+cmake -S llama.cpp -B llama.cpp/build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DGGML_NATIVE=ON \
     -DGGML_CUDA=ON \
@@ -275,10 +286,10 @@ cmake -B build -G Ninja \
     -DGGML_CUDA_GRAPHS=ON \
     -DGGML_CUDA_NO_VMM=ON
 
-cmake --build build --config Release --parallel
+cmake --build llama.cpp/build --config Release --parallel
 
 # 3. 安装到宿主机 /usr/local（需要 sudo）
-sudo cmake --install build --prefix /usr/local
+sudo cmake --install llama.cpp/build --prefix /usr/local
 sudo ldconfig
 
 # 4. 重启容器即可生效（无需 docker compose build！）
@@ -328,12 +339,11 @@ docker compose restart
 | ----------------------------- | ------------------------------------------------------- |
 | `GGML_CUDA=ON`                | 启用 CUDA 后端                                          |
 | `CMAKE_CUDA_ARCHITECTURES=87` | 仅编译 sm_87 (Orin AGX)，缩短编译时间并减小体积         |
-| `GGML_CUDA_F16=ON`            | Flash Attention 使用 FP16 Tensor Core，长上下文推理加速 |
+| `GGML_NATIVE=ON`              | 为当前 Jetson CPU 启用本机指令优化                         |
+| `GGML_CUDA_FA=ON`             | 编译 CUDA Flash Attention 内核                             |
 | `GGML_CUDA_FA_ALL_QUANTS=ON`  | 对所有量化格式均启用 Flash Attention，防止回退到慢路径  |
-| `GGML_CUDA_DMMV_X=64`         | 矩阵-向量乘法 X 维并行度，匹配 Orin 2048 CUDA Cores     |
-| `GGML_CUDA_MMV_Y=2`           | 矩阵-向量乘法 Y 维并行度，社区实测可获得 10~20% 加速    |
+| `GGML_CUDA_GRAPHS=ON`         | 启用 CUDA Graphs，减少重复推理的调度开销                   |
 | `GGML_CUDA_NO_VMM=ON`         | 禁用 VMM 大块预分配，专为 Jetson UMA 共享内存架构设计   |
-| `LLAMA_CURL=ON`               | llama-server 支持从 URL 加载模型                        |
 
 运行时通过 `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 环境变量启用统一内存调度，
 社区实测可提升推理性能约 **10~15%**。
@@ -481,7 +491,7 @@ _注：建议将 `defaultThinkingLevel` 设为 `"off"` 以确保本地运行流�
 /model local-gemma-31b/unsloth/gemma-4-31B-it-qat-GGUF:UD-Q4_K_XL
 
 #切换到 26B A4B 模型
-/model local-gemma-26b/unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL
+/model local-gemma-26b/unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_XL
 
 #切换到 Qwen3.6 35B MoE 模型 (推荐，官方原版，稳定可靠，智能体推荐)
 /model local-qwen36-35b-moe/qwen3.6-35b-moe

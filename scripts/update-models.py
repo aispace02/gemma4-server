@@ -36,6 +36,7 @@ class ModelSpec:
     repository: str
     filename: str
     description: str
+    auxiliary_files: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -75,9 +76,10 @@ MODEL_SPECS = (
     ),
     ModelSpec(
         "gemma4-26b-a4b",
-        "unsloth/gemma-4-26B-A4B-it-qat-GGUF",
-        "gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf",
-        "Gemma-4 26B-A4B MoE QAT",
+        "unsloth/gemma-4-26B-A4B-it-GGUF",
+        "gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf",
+        "Gemma-4 26B-A4B MoE (Unsloth Dynamic)",
+        ("MTP/mtp-gemma-4-26B-A4B-it-Q8_0.gguf",),
     ),
     ModelSpec(
         "gemma4-12b-agentic",
@@ -94,8 +96,9 @@ MODEL_SPECS = (
     ModelSpec(
         "qwen38-27b",
         "unsloth/Qwen3.8-27B-GGUF",
-        "Qwen3.8-27B-Q4_K_M.gguf",
-        "Qwen3.8 27B Dense",
+        "Qwen3.8-27B-UD-Q4_K_XL.gguf",
+        "Qwen3.8 27B Dense (Unsloth Dynamic V3.0)",
+        ("MTP/mtp-Qwen3.8-27B-Q4_0.gguf",),
     ),
 )
 
@@ -316,15 +319,13 @@ def download_model(
 ) -> ModelResult:
     command = command_prefix + [
         "download",
-        "--model",
         spec.repository,
-        spec.filename,
-        "--max-workers",
-        "1",
     ]
+    download_files = (spec.filename, *spec.auxiliary_files)
+    command.extend(download_files)
     if revision:
         command.extend(["--revision", revision])
-    command.extend(["--local_dir", str(model_dir)])
+    command.extend(["--local-dir", str(model_dir), "--max-workers", "1"])
 
     target = model_dir / spec.filename
     print(f"[{ordinal}] {spec.description} -> {target}")
@@ -332,6 +333,10 @@ def download_model(
 
     remote_date = fetch_remote_file_date(spec.repository, spec.filename)
     before_check = file_snapshot(target)
+    auxiliary_before = {
+        filename: file_snapshot(model_dir / filename)
+        for filename in spec.auxiliary_files
+    }
     local_date = format_mtime(before_check.mtime_ns) if before_check else None
     print_date_check(local_date, remote_date)
 
@@ -363,7 +368,26 @@ def download_model(
     if after.size <= 0:
         raise RuntimeError(f"目标文件为空，已停止: {target}")
 
-    status = STATUS_UPDATED if file_was_changed(before, after) else STATUS_UNCHANGED
+    auxiliary_changes: list[tuple[Path, FileSnapshot | None, FileSnapshot]] = []
+    for filename in spec.auxiliary_files:
+        auxiliary_target = model_dir / filename
+        auxiliary_after = file_snapshot(auxiliary_target)
+        if auxiliary_after is None:
+            raise RuntimeError(
+                f"下载命令已返回成功，但没有找到辅助文件: {auxiliary_target}\n"
+                "请检查 ModelScope 仓库中的文件路径是否发生变化。"
+            )
+        if auxiliary_after.size <= 0:
+            raise RuntimeError(f"辅助文件为空，已停止: {auxiliary_target}")
+        auxiliary_changes.append(
+            (auxiliary_target, auxiliary_before[filename], auxiliary_after)
+        )
+
+    changed = file_was_changed(before, after) or any(
+        file_was_changed(before_aux, after_aux)
+        for _, before_aux, after_aux in auxiliary_changes
+    )
+    status = STATUS_UPDATED if changed else STATUS_UNCHANGED
     local_date = format_mtime(after.mtime_ns)
 
     date_parts = [f"本地: {local_date}"]
@@ -372,6 +396,12 @@ def download_model(
     date_str = " | ".join(date_parts)
 
     print(f"      状态: {status}（{after.size / (1024**3):.2f} GiB | {date_str}）")
+    for auxiliary_target, _, auxiliary_after in auxiliary_changes:
+        print(
+            f"      辅助文件: {auxiliary_target} "
+            f"({auxiliary_after.size / (1024**3):.2f} GiB | "
+            f"本地: {format_mtime(auxiliary_after.mtime_ns)})"
+        )
     return ModelResult(
         spec,
         status,

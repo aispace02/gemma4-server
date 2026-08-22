@@ -70,7 +70,11 @@ services:
     container_name: gemma4-26b-a4b
     command: >
       llama-server
-      -m /root/.cache/huggingface/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf
+      -m /root/.cache/huggingface/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
+      --model-draft /root/.cache/huggingface/MTP/mtp-gemma-4-26B-A4B-it-Q8_0.gguf
+      --spec-type draft-mtp
+      --spec-draft-n-max 2
+      --parallel 1
       --host 0.0.0.0
       --port 8081
       -ngl 999
@@ -143,14 +147,18 @@ services:
   qwen38-27b:
     <<: *llama-common
     container_name: qwen38-27b
-    # Qwen 官方原版 Qwen3.8-27B (Unsloth Q4_K_M GGUF) - 全参数 dense 模型。
+    # Qwen 官方原版 Qwen3.8-27B (Unsloth Dynamic V3.0 UD-Q4_K_XL GGUF) - 全参数 dense 模型。
     # 与 35B-A3B (MoE,仅激活 3B) 互补：27B 为全参数激活，每 token 计算量更大、
     # 但对单点推理质量（尤其非 agentic 的通用任务）更扎实稳定。
     # 架构 qwen3_5 (Gated DeltaNet + Gated Attention 混合层, 64 层 dense)，
     # 已被当前 llama.cpp (含 LLM_ARCH_QWEN35) 支持。原生 262K 上下文。
     command: >
       llama-server
-      -m /root/.cache/huggingface/Qwen3.8-27B-Q4_K_M.gguf
+      -m /root/.cache/huggingface/Qwen3.8-27B-UD-Q4_K_XL.gguf
+      --model-draft /root/.cache/huggingface/MTP/mtp-Qwen3.8-27B-Q4_0.gguf
+      --spec-type draft-mtp
+      --spec-draft-n-max 2
+      --parallel 1
       --host 0.0.0.0
       --port 8085
       -ngl 999
@@ -167,7 +175,9 @@ services:
       --swa-checkpoints 4
       --n-predict 8192
       --temperature 1.0
+      --top-p 0.95
       --repeat-penalty 1.0
       --top-k 20
       --min-p 0.0
+      --presence-penalty 0.0
       --reasoning-preserve
