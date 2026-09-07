@@ -12,13 +12,16 @@
 #     - llama.cpp 源码由 git submodule (./llama.cpp) 统一管理
 #
 #   宿主机更新 llama.cpp 并重新编译:
-#     cd llama.cpp && git pull && cd ..
-#     cmake -B llama.cpp/build -G Ninja \
-#         -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=87 \
+#     git submodule update --init --remote --checkout llama.cpp
+#     cmake -S llama.cpp -B llama.cpp/build -G Ninja \
 #         -DCMAKE_BUILD_TYPE=Release \
-#         -DGGML_CUDA_F16=ON -DGGML_CUDA_FA_ALL_QUANTS=ON \
-#         -DGGML_CUDA_DMMV_X=64 -DGGML_CUDA_MMV_Y=2 \
-#         -DGGML_CUDA_NO_VMM=ON -DLLAMA_CURL=ON
+#         -DGGML_NATIVE=ON \
+#         -DGGML_CUDA=ON \
+#         -DCMAKE_CUDA_ARCHITECTURES=87 \
+#         -DGGML_CUDA_FA=ON \
+#         -DGGML_CUDA_FA_ALL_QUANTS=ON \
+#         -DGGML_CUDA_GRAPHS=ON \
+#         -DGGML_CUDA_NO_VMM=ON
 #     cmake --build llama.cpp/build --parallel
 #     sudo cmake --install llama.cpp/build --prefix /usr/local
 #     sudo ldconfig
