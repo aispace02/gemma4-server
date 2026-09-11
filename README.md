@@ -7,46 +7,45 @@
 ### 0.1 构建与运行流程
 
 ```text
-构建阶段
-Dockerfile + docker compose build
-        ↓
-Image（CUDA 运行层 + libcurl4/libgomp1）
-
-运行阶段
-Image + docker-compose.yml + Host bind mounts + NVIDIA Runtime
-        ↓
-Container
-        ↓
-llama-server 加载 Host 挂载的 GGUF 模型
+宿主机准备
+llama.cpp 编译并安装到 /usr/local
+        │
+        ├──────────────────────────────────────────────┐
+        │                                              │
+镜像构建                                         容器启动
+Dockerfile + docker compose build                 docker compose up
+        │                                              │
+        ▼                                              ▼
+Image                                           Container
+CUDA runtime + libcurl4/libgomp1          Image + bind mounts
+                                                     + NVIDIA Runtime
+                                                            │
+                                                            ▼
+                                      llama-server 从 Host 挂载路径加载 GGUF
 ```
 
-`docker compose build` 只构建镜像，不启动模型容器，也不会编译 `llama.cpp` 或下载模型。`docker compose up` 才会基于镜像创建容器，并按 Compose 配置挂载宿主机文件、GPU 和启动命令。
+`llama.cpp` 在宿主机编译并安装到 `/usr/local`；`docker compose build` 只构建运行时镜像，不会启动容器或下载模型。`docker compose up` 才会基于镜像创建容器，并按 Compose 配置挂载宿主机文件、GPU 和启动命令。
 
 ### 0.2 Host、Image 与 Container 的关系
 
 ```text
-Host（Jetson Orin）
-├── Jetson Linux、NVIDIA Driver、GPU
-├── NVIDIA Container Toolkit / Runtime
-├── /usr/local/bin 和 /usr/local/lib
-│   └── 宿主机编译安装的 llama-server 和共享库
-├── /mnt/ssd/huggingface
-│   └── GGUF 模型和 MTP 文件
-└── repository
-    ├── Dockerfile：定义镜像
-    └── docker-compose.yml：定义容器、挂载、GPU 和启动命令
-
-Image（docker compose build）
-├── NVIDIA CUDA runtime / Ubuntu 24.04 基础层
-├── libcurl4
-└── libgomp1
-
-Container（docker compose up）
-├── 来自 Image：CUDA 运行库和基础依赖
-├── bind mount：/usr/local/bin → /opt/llama/bin
-├── bind mount：/usr/local/lib → /opt/llama/lib
-├── bind mount：/mnt/ssd/huggingface → /root/.cache/huggingface
-└── NVIDIA Runtime 注入的 GPU 设备和驱动接口
+Host（Jetson Orin）                         Image（docker compose build）
+┌──────────────────────────────┐           ┌──────────────────────────┐
+│ Jetson Linux / NVIDIA Driver │           │ CUDA runtime              │
+│ GPU + Container Toolkit      │           │ Ubuntu 24.04 基础层       │
+│                              │           │ libcurl4 + libgomp1       │
+│ /usr/local/bin               │──挂载──▶  └──────────────┬───────────┘
+│ /usr/local/lib               │                          │
+│   llama-server + 共享库     │                          │ 创建
+│                              │                          ▼
+│ /mnt/ssd/huggingface         │           Container（docker compose up）
+│   GGUF + MTP 模型            │           ┌──────────────────────────┐
+│                              │           │ 来自 Image 的运行时依赖    │
+│ repository                   │           │ /opt/llama/bin             │◀─
+│   Dockerfile                 │           │ /opt/llama/lib             │◀─
+│   docker-compose.yml         │           │ /root/.cache/huggingface   │◀─
+└──────────────────────────────┘           │ NVIDIA Runtime 注入 GPU    │
+                                           └──────────────────────────┘
 ```
 
 | 内容 | 是否进入 Image | Host 来源 | Container 内路径 | 更新方式 |
