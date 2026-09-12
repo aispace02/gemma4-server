@@ -130,17 +130,17 @@ curl -sN http://<JETSON_IP>:8080/v1/chat/completions \
 docker compose ps
 
 # 启动单个服务；不要无参数启动全部大模型
-docker compose up -d qwen36-35b-moe
+docker compose up -d qwen38-27b
 
 # 查看实时日志
 docker compose logs -f
-docker compose logs -f --tail=100 -t qwen36-35b-moe
+docker compose logs -f --tail=100 -t qwen38-27b
 
 # 修改 docker-compose.yml 后重新创建单个服务
-docker compose up -d --force-recreate qwen36-35b-moe
+docker compose up -d --force-recreate qwen38-27b
 
 # 重启已运行服务
-docker compose restart qwen36-35b-moe
+docker compose restart qwen38-27b
 
 # 仅停止服务，保留容器
 docker compose stop
