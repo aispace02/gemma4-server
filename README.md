@@ -334,6 +334,9 @@ docker compose restart qwen-image
 补充说明：
 
 - `.gitmodules` 同样将 `stable-diffusion.cpp` 跟踪 `master` 并忽略指针变化。
+- **Jetson/UMA 优化现状**：sd.cpp 没有额外的 Jetson 专用编译开关。容器设置 `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 后，CUDA 分配使用 `cudaMallocManaged`，并让 ggml 的显存预算按系统可用内存计算。注意，当前 ggml CUDA 代码暂时将设备的 `integrated` 标记硬编码为 `false`（规避已知错误输出问题），因此不能说它会自动把 Tegra 识别为 integrated GPU；这里的 UMA 预算判断由上述环境变量显式触发。Orin 的 MMVQ 调优分支会按 compute capability 8.7 在运行时选择，构建参数 `-DCMAKE_CUDA_ARCHITECTURES=87` 已包含对应 CUDA 代码。`GGML_CUDA_GRAPHS` 在 ggml 中标注为 llama.cpp 专用，不适用于 sd.cpp。其余构建参数是否更快取决于具体模型和工作负载，需在设备上基准比较，不能笼统称为最优组合。
+- **SageAttention**（`--sage-attn`，`qwen-image` 服务已启用）：补丁版 ggml 自带原生 CUDA INT8 注意力 kernel，sm_87 走 SM80+ 兼容路径，无需额外编译开关；AGX 实测比 `--diffusion-fa` 采样快约 10%（832×832、20 步、同种子：169.8s → 151.8s），注意力量化会轻微改变数值结果（同种子输出与 FA 略有差异，画质实测正常），不支持的层自动回退 FlashAttention。参见 sd.cpp `docs/sage_attention.md`。
+- 上游有两个 Jetson/Grace UMA 相关 issue 值得留意：[#1586](https://github.com/leejet/stable-diffusion.cpp/issues/1586)（运行时模型切换在 UMA 上可能 SEGV；本部署固定单一模型组合，不受影响）、[#1587](https://github.com/leejet/stable-diffusion.cpp/issues/1587)（UMA 下 VAE 缓冲未释放导致 OOM，已修复）。
 - Web UI 前端默认不编译（需要 Node.js ≥ 20 与 pnpm）。本机无 pnpm 时构建会自动跳过前端，`/v1`、`/sdapi/v1`、`/sdcpp/v1` API 不受影响。需要 Web UI 时可通过国内 npm 镜像安装 pnpm（`npm config set registry https://registry.npmmirror.com && npm install -g pnpm`），再加 `-DSD_SERVER_BUILD_FRONTEND=ON` 重新编译。
 - 命令行批量出图/修图可直接在宿主机运行 `/opt/sdcpp/bin/sd-cli`，参数示例见 sd.cpp 仓库 `docs/qwen_image_2.1.md`。
 
