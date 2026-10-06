@@ -41,6 +41,35 @@ x-llama-common: &llama-common
       soft: -1
       hard: -1
 
+# stable-diffusion.cpp (sd-server) 公共配置 —— 与 x-llama-common 的差异:
+#   sd.cpp 携带自己 fork 的 ggml，与 llama.cpp 安装在 /usr/local 的 ggml 库
+#   同名不兼容，因此编译安装到独立前缀 /opt/sdcpp（静态链接，仅挂载 bin）。
+#   GPU 运行时、host 网络、模型目录等与 llama 服务保持一致。
+x-sd-common: &sd-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  runtime: nvidia
+  devices:
+    - nvidia.com/gpu=all
+  network_mode: host
+  restart: unless-stopped
+  volumes:
+    - /mnt/ssd/huggingface:/root/.cache/huggingface
+    - /opt/sdcpp/bin:/opt/sdcpp/bin:ro
+  environment:
+    - NVIDIA_VISIBLE_DEVICES=all
+    - NVIDIA_DRIVER_CAPABILITIES=all
+    # Jetson UMA 统一内存优化（同 llama 服务）
+    - GGML_CUDA_ENABLE_UNIFIED_MEMORY=1
+    - PATH=/opt/sdcpp/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    # sd.cpp 静态链接，仅需 NVIDIA 驱动库路径（update-ldcache 挂钩已禁用）
+    - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu/nvidia:/opt/nvidia/l4t-gpu-libs/nvgpu
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+
 services:
   gemma4-31b:
     <<: *llama-common
@@ -181,3 +210,24 @@ services:
       --min-p 0.0
       --presence-penalty 0.0
       --reasoning-preserve
+
+  qwen-image:
+    <<: *sd-common
+    container_name: qwen-image
+    # Qwen-Image-2.1 统一文生图 + 图片编辑，引擎为 stable-diffusion.cpp (sd-server)。
+    # 四个组件: 扩散模型 Q4_K_M GGUF + 2.1 专用 VAE (不兼容旧版 Qwen-Image/Wan VAE)
+    # + Qwen3-VL-8B 文本编码器 + mmproj 视觉投影 (图片编辑/参考图输入必需)。
+    # 内存: 权重合计约 10.4 GiB (含 VAE/mmproj) + 采样期前缀缓存，
+    # 与 LLM 服务共存时注意 64GB 统一内存上限，不要同时全部启动。
+    # API: http://<ip>:8083/ 为入口；OpenAI 风格 /v1/images/*，
+    #      A1111 兼容 /sdapi/v1/*，原生异步 /sdcpp/v1/*。
+    command: >
+      sd-server
+      --diffusion-model /root/.cache/huggingface/qwen-image-2.1-Q4_K_M.gguf
+      --vae /root/.cache/huggingface/vae/qwen_image_2.1_vae_bf16.safetensors
+      --llm /root/.cache/huggingface/Qwen3-VL-8B-Instruct-UD-Q4_K_XL.gguf
+      --llm_vision /root/.cache/huggingface/mmproj-BF16.gguf
+      --listen-ip 0.0.0.0
+      --listen-port 8083
+      --cfg-scale 6.0
+      --diffusion-fa

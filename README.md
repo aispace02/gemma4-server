@@ -1,6 +1,6 @@
 # Gemma-4 Local Servers on Jetson Orin
 
-本项目使用 Docker Compose 在 NVIDIA Jetson Orin AGX 上运行多个本地 GGUF 推理服务。当前主要面向 JetPack 7.2（CUDA 13.2.1 / Ubuntu 24.04），通过宿主机编译 `llama.cpp`，再由容器挂载运行。
+本项目使用 Docker Compose 在 NVIDIA Jetson Orin AGX 上运行多个本地 GGUF 推理服务。当前主要面向 JetPack 7.2（CUDA 13.2.1 / Ubuntu 24.04），通过宿主机编译 `llama.cpp`（LLM 文本服务）与 `stable-diffusion.cpp`（`qwen-image` 图像生成/编辑服务，安装到独立前缀 `/opt/sdcpp`），再由容器挂载运行。
 
 ## 0. 架构总览
 
@@ -52,6 +52,7 @@ Host（Jetson Orin）                         Image（docker compose build）
 | --- | --- | --- | --- | --- |
 | CUDA 运行库和系统依赖 | 是 | NVIDIA NGC 基础镜像、Dockerfile | 镜像文件系统 | 修改 Dockerfile 后 `build` |
 | `llama-server` 二进制和共享库 | 否 | `/usr/local/bin`、`/usr/local/lib` | `/opt/llama/bin`、`/opt/llama/lib` | 宿主机编译安装后启动或重启服务 |
+| `sd-server` 二进制（stable-diffusion.cpp，静态链接） | 否 | `/opt/sdcpp/bin` | `/opt/sdcpp/bin` | 宿主机编译安装后启动或重启服务 |
 | GGUF 模型和 MTP 文件 | 否 | `/mnt/ssd/huggingface` | `/root/.cache/huggingface` | 使用模型更新脚本后启动或重启服务 |
 | GPU 和 NVIDIA Driver | 否 | Jetson 宿主机 | NVIDIA Runtime 注入 | 更新 JetPack/驱动和宿主机配置 |
 | Compose 启动参数 | 否 | `docker-compose.yml` | 不复制到容器文件系统 | `docker compose up -d <service>` 重建容器 |
@@ -64,6 +65,7 @@ Host（Jetson Orin）                         Image（docker compose build）
 - Docker 与 Docker Compose v2
 - SSD 挂载到 `/mnt/ssd/`，且存在 `/mnt/ssd/huggingface/` 模型缓存目录
 - 宿主机已编译并安装 `llama.cpp` 到 `/usr/local`；若尚未准备，见第 4 节
+- （可选，`qwen-image` 图像服务需要）宿主机已编译并安装 `stable-diffusion.cpp` 到 `/opt/sdcpp`；见 4.2 节
 
 ### 1.2 构建容器镜像
 
@@ -122,6 +124,7 @@ curl -sN http://<JETSON_IP>:8080/v1/chat/completions \
 | `gemma4-12b-agentic` | Gemma-4 12B Agentic | 8082 | 64K | 多轮 Agent 和代码分析 |
 | `qwen36-35b-moe` | Qwen3.6 35B-A3B MoE | 8084 | 128K | 长上下文、Agent、高吞吐 |
 | `qwen38-27b` | Qwen3.8 27B Dense | 8085 | 256K | 单点推理质量和编程任务 |
+| `qwen-image` | Qwen-Image-2.1 (sd.cpp) | 8083 | — | 文生图、图片编辑（支持输入参考图） |
 
 ### 2.1 服务管理命令
 
@@ -161,9 +164,74 @@ jtop
 docker stats
 ```
 
+### 2.3 qwen-image 图像服务用法
+
+`qwen-image` 由 stable-diffusion.cpp 的 `sd-server` 提供服务，同时暴露三套 API：OpenAI 兼容（`/v1/images/*`）、A1111 WebUI 兼容（`/sdapi/v1/*`）和原生异步任务（`/sdcpp/v1/*`）。响应中的图片以 base64 返回。
+
+文生图：
+
+```bash
+curl -s http://localhost:8083/v1/images/generations \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "prompt": "a cartoon sloth mascot waving, flat vector illustration",
+    "size": "1024x1024",
+    "output_format": "png"
+  }' | python3 -c 'import json,base64,sys; d=json.load(sys.stdin)["data"][0]["b64_json"]; open("out.png","wb").write(base64.b64decode(d))'
+```
+
+图片编辑（原生异步 API，`ref_images` 传参考图，实测有效的编辑路径）：
+
+```bash
+python3 - <<'EOF'
+import base64, json, time, urllib.request
+
+b64 = base64.b64encode(open("cpu-pipeline.png", "rb").read()).decode()
+body = {
+    "prompt": "change 'IF' to 'ID'",          # 编辑指令
+    "ref_images": ["data:image/png;base64," + b64],
+    # "width"/"height" 可省略，默认沿用参考图尺寸
+}
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+req = urllib.request.Request("http://localhost:8083/sdcpp/v1/img_gen",
+    data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+job = json.load(opener.open(req, timeout=30))              # 提交任务
+while True:                                                # 轮询直到完成
+    time.sleep(5)
+    st = json.load(opener.open(urllib.request.Request(
+        f"http://localhost:8083/sdcpp/v1/jobs/{job['id']}"), timeout=30))
+    if st["status"] == "completed":
+        open("out.png", "wb").write(base64.b64decode(st["result"]["images"][0]["b64_json"]))
+        print("saved out.png"); break
+    if st["status"] in ("failed", "cancelled"):
+        raise SystemExit(st)
+EOF
+```
+
+注意事项：
+
+- **编辑请用上面的 `/sdcpp/v1/img_gen` + `ref_images`，不要用 `/v1/images/edits`**：OpenAI 兼容端点会把第一张上传图同时当作 init 图（img2img 语义），实测会导致编辑指令不生效（输出与输入几乎相同）；文生图端点 `/v1/images/generations` 不受影响。
+- 编辑指令措辞参考官方示例风格：`change 'A' to 'B'`；保持其余不变的约束可一并写进 prompt。
+- 命令行批量编辑可在宿主机直接运行：
+
+  ```bash
+  /opt/sdcpp/bin/sd-cli \
+      --diffusion-model /mnt/ssd/huggingface/qwen-image-2.1-Q4_K_M.gguf \
+      --vae /mnt/ssd/huggingface/vae/qwen_image_2.1_vae_bf16.safetensors \
+      --llm /mnt/ssd/huggingface/Qwen3-VL-8B-Instruct-UD-Q4_K_XL.gguf \
+      --llm_vision /mnt/ssd/huggingface/mmproj-BF16.gguf \
+      --cfg-scale 6.0 --sampling-method euler --diffusion-fa \
+      -r 输入图.png -p "change 'A' to 'B'" -o 输出图.png
+  ```
+
+- 生成尺寸必须能被 32 整除；采样参数通过 `sd_cpp_extra_args` 内嵌在 `prompt` 中传递（如 `<sd_cpp_extra_args>{"sample_params":{"sample_steps":28}}</sd_cpp_extra_args>`，原生 API 直接写在请求体），完整字段见 sd.cpp 仓库 `examples/server/api.md`。
+- 需要 RGBA 透明输出时，按官方推荐在 prompt 中使用固定句式：`This is an RGBA image with transparency. <描述>. The image has alpha channel and the background is transparent.`；透明通道仅保留在 png/webp 输出。
+- AGX 实测速度（Q4_K_M，832×832）：文生图 12 步约 2.5 分钟；编辑默认步数约 4 分钟。
+- 该服务权重合计约 10.4 GiB（常驻 VRAM 约 10.2 GiB），与多个 LLM 服务同时运行前请先确认统一内存余量（见 2.2 节监控）。
+
 ## 3. 模型更新
 
-仓库脚本 [`scripts/update-models.py`](scripts/update-models.py) 统一维护每个服务对应的 ModelScope 仓库、GGUF 文件、MTP 附属文件和本地路径。
+仓库脚本 [`scripts/update-models.py`](scripts/update-models.py) 统一维护每个服务对应的 ModelScope 仓库、GGUF 文件、MTP 附属文件和本地路径。`qwen-image` 服务的四件套（扩散模型、VAE、文本编码器、mmproj）分属三个 ModelScope 仓库，由脚本的 `extra_downloads` 字段统一管理。
 
 ```bash
 # 先检查将要执行的 ModelScope 命令，不产生网络请求
@@ -194,7 +262,11 @@ modelscope download unsloth/gemma-4-31B-it-qat-GGUF \
     --local-dir /mnt/ssd/huggingface --max-workers 1
 ```
 
-## 4. 更新 llama.cpp 引擎
+## 4. 更新推理引擎
+
+本仓库通过两个 git 子模块管理推理引擎：`llama.cpp`（LLM 文本服务，安装到 `/usr/local`）和 `stable-diffusion.cpp`（`qwen-image` 图像服务，安装到独立前缀 `/opt/sdcpp`）。两者都在宿主机编译，容器只读挂载二进制；引擎更新后只需重启对应服务，不需要重新构建镜像。
+
+### 4.1 更新 llama.cpp（/usr/local）
 
 容器不编译 `llama.cpp`。宿主机编译并安装到 `/usr/local` 后，Compose 会将 `/usr/local/bin` 和 `/usr/local/lib` 只读挂载到容器内的 `/opt/llama`。因此引擎更新后只需要重启容器，不需要重新构建镜像。
 
@@ -232,6 +304,38 @@ docker compose restart gemma4-31b
 > 若 `/usr/local/lib` 不在动态链接器搜索路径中，执行 `echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/usr_local_lib.conf && sudo ldconfig`。
 >
 > `.gitmodules` 已将 `llama.cpp` 跟踪分支设置为 `master`，并忽略子模块指针变化，因此更新后主仓库不会要求提交子模块指针。
+
+### 4.2 更新 stable-diffusion.cpp（/opt/sdcpp）
+
+`stable-diffusion.cpp` 是图像生成/编辑引擎（ggml 系，与 llama.cpp 同源但分工不同）。**必须安装到独立前缀 `/opt/sdcpp`**：它携带自己 fork 的 ggml，与 llama.cpp 安装在 `/usr/local/lib` 的 ggml 共享库同名但版本不同，混装会互相覆盖导致两边都损坏。默认静态链接（`SD_BUILD_SHARED_LIBS=OFF`），安装产物只有 `bin/sd-cli`、`bin/sd-server`，容器仅挂载 `/opt/sdcpp/bin`。
+
+```bash
+git submodule update --init --remote --checkout stable-diffusion.cpp
+
+# sd.cpp 还有自己的子模块（ggml fork、libwebp 等）；直连 GitHub 克隆慢时加 --depth 1
+git -C stable-diffusion.cpp submodule update --init --recursive --depth 1
+
+cmake -S stable-diffusion.cpp -B stable-diffusion.cpp/build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DSD_CUDA=ON \
+    -DCMAKE_CUDA_ARCHITECTURES=87 \
+    -DGGML_CUDA_NO_VMM=ON
+
+cmake --build stable-diffusion.cpp/build --parallel
+sudo cmake --install stable-diffusion.cpp/build --prefix /opt/sdcpp
+```
+
+更新安装后重启图像服务即可生效：
+
+```bash
+docker compose restart qwen-image
+```
+
+补充说明：
+
+- `.gitmodules` 同样将 `stable-diffusion.cpp` 跟踪 `master` 并忽略指针变化。
+- Web UI 前端默认不编译（需要 Node.js ≥ 20 与 pnpm）。本机无 pnpm 时构建会自动跳过前端，`/v1`、`/sdapi/v1`、`/sdcpp/v1` API 不受影响。需要 Web UI 时可通过国内 npm 镜像安装 pnpm（`npm config set registry https://registry.npmmirror.com && npm install -g pnpm`），再加 `-DSD_SERVER_BUILD_FRONTEND=ON` 重新编译。
+- 命令行批量出图/修图可直接在宿主机运行 `/opt/sdcpp/bin/sd-cli`，参数示例见 sd.cpp 仓库 `docs/qwen_image_2.1.md`。
 
 ## 5. Docker 运行时说明
 
@@ -473,5 +577,7 @@ aider --openai-api-base http://<JETSON_IP>:9084/v1 --openai-api-key not-needed
 ## 9. 参考资源
 
 - [NVIDIA AI IOT](https://github.com/NVIDIA-AI-IOT)
-- [Jetson Containers Quickstart](https://forums.developer.nvidia.com/t/jetson-containers-quickstart-on-nvidia-jetson-agx-orin-64GB/365700)
+- [Jetson Containers Quickstart](https://forums.developer.nvidia.com/t/jetson-containers-quickstart-on-nvidia-jetson-agx-64gb/365700)
 - [Forge 官方仓库](https://github.com/antoinezambelli/forge)
+- [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp)（qwen-image 服务引擎；Qwen-Image-2.1 用法见其 `docs/qwen_image_2.1.md`，API 见 `examples/server/api.md`）
+- [unsloth/Qwen-Image-2.1-GGUF（ModelScope）](https://www.modelscope.cn/models/unsloth/Qwen-Image-2.1-GGUF)（扩散模型 GGUF；VAE/编码器/mmproj 见 `scripts/update-models.py` 中 `qwen-image` 条目）

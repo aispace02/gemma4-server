@@ -29,6 +29,11 @@
 #
 # 注意: 在 Jetson 上 runtime: nvidia 会自动将宿主机 CUDA 13.2.1 驱动库
 #       挂载进容器，宿主机编译的 ARM aarch64 二进制在容器内可直接运行。
+#
+# 本镜像同时被 qwen-image 服务复用: stable-diffusion.cpp 在宿主机编译安装到
+# /opt/sdcpp (独立前缀, 避免与 llama.cpp 的 ggml 库冲突), 由 docker-compose.yml
+# 的 x-sd-common 锚点将 /opt/sdcpp/bin 只读挂载进容器。静态链接, 无额外运行时
+# 依赖, 本 Dockerfile 无需为 sd-server 做任何改动。
 # =============================================================================
 
 # 使用与宿主机 OS 一致的 Ubuntu 24.04 基础镜像（仅运行时，无需 devel）

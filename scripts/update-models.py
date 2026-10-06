@@ -37,6 +37,9 @@ class ModelSpec:
     filename: str
     description: str
     auxiliary_files: tuple[str, ...] = ()
+    # 同一服务需要的、位于其他 ModelScope 仓库中的文件 (repository, filename)。
+    # 用于 sd.cpp 这类多组件管线：扩散模型、VAE、文本编码器分属不同仓库。
+    extra_downloads: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -99,6 +102,17 @@ MODEL_SPECS = (
         "Qwen3.8-27B-UD-Q4_K_XL.gguf",
         "Qwen3.8 27B Dense (Unsloth Dynamic V3.0)",
         ("MTP/mtp-Qwen3.8-27B-Q4_0.gguf",),
+    ),
+    ModelSpec(
+        "qwen-image",
+        "unsloth/Qwen-Image-2.1-GGUF",
+        "qwen-image-2.1-Q4_K_M.gguf",
+        "Qwen-Image-2.1 文生图/编辑 (sd.cpp)",
+        extra_downloads=(
+            ("unsloth/Qwen-Image-2.1-FP8", "vae/qwen_image_2.1_vae_bf16.safetensors"),
+            ("unsloth/Qwen3-VL-8B-Instruct-GGUF", "Qwen3-VL-8B-Instruct-UD-Q4_K_XL.gguf"),
+            ("unsloth/Qwen3-VL-8B-Instruct-GGUF", "mmproj-BF16.gguf"),
+        ),
     ),
 )
 
@@ -337,11 +351,20 @@ def download_model(
         filename: file_snapshot(model_dir / filename)
         for filename in spec.auxiliary_files
     }
+    extra_before = {
+        filename: file_snapshot(model_dir / filename)
+        for _, filename in spec.extra_downloads
+    }
     local_date = format_mtime(before_check.mtime_ns) if before_check else None
     print_date_check(local_date, remote_date)
 
     if dry_run:
         print(f"      dry-run: {shlex.join(command)}")
+        for repository, filename in spec.extra_downloads:
+            print(
+                f"      dry-run: modelscope download {repository} {filename} "
+                f"--local-dir {model_dir} --max-workers 1"
+            )
         print(f"      状态: {STATUS_DRY_RUN}")
         return ModelResult(
             spec,
@@ -381,6 +404,33 @@ def download_model(
             raise RuntimeError(f"辅助文件为空，已停止: {auxiliary_target}")
         auxiliary_changes.append(
             (auxiliary_target, auxiliary_before[filename], auxiliary_after)
+        )
+
+    for repository, filename in spec.extra_downloads:
+        extra_target = model_dir / filename
+        extra_command = command_prefix + [
+            "download",
+            repository,
+            filename,
+        ]
+        if revision:
+            extra_command.extend(["--revision", revision])
+        extra_command.extend(["--local-dir", str(model_dir), "--max-workers", "1"])
+        print(f"      额外仓库: {repository}/{filename}")
+        extra_result = subprocess.run(extra_command, env=environment, check=False)
+        if extra_result.returncode != 0:
+            raise RuntimeError(
+                f"ModelScope 下载失败（退出码 {extra_result.returncode}）: "
+                f"{repository}/{filename}"
+            )
+        extra_after = file_snapshot(extra_target)
+        if extra_after is None or extra_after.size <= 0:
+            raise RuntimeError(
+                f"下载命令已返回成功，但没有找到额外文件: {extra_target}\n"
+                "请检查 ModelScope 仓库中的文件路径是否发生变化。"
+            )
+        auxiliary_changes.append(
+            (extra_target, extra_before[filename], extra_after)
         )
 
     changed = file_was_changed(before, after) or any(
