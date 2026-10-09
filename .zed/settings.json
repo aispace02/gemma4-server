@@ -1,0 +1,7 @@
+{
+  "languages": {
+    "Markdown": {
+      "enable_language_server": true,
+    }
+  }
+}

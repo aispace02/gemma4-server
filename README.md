@@ -280,14 +280,22 @@ cmake -S llama.cpp -B llama.cpp/build -G Ninja \
     -DGGML_CUDA=ON \
     -DCMAKE_CUDA_ARCHITECTURES=87 \
     -DGGML_CUDA_FA=ON \
-    -DGGML_CUDA_FA_ALL_QUANTS=ON \
+    -DGGML_CUDA_FA_QUANTS=all \
     -DGGML_CUDA_GRAPHS=ON \
-    -DGGML_CUDA_NO_VMM=ON
+    -DGGML_CUDA_NO_VMM=ON \
+    -DGGML_CUDA_CCCL_VERSION=v3.4.3
 
 cmake --build llama.cpp/build --config Release --parallel
 sudo cmake --install llama.cpp/build --prefix /usr/local
 sudo ldconfig
 ```
+
+各选项说明（针对 Jetson Orin AGX / JetPack 7.2）：
+
+- `CMAKE_CUDA_ARCHITECTURES=87`：Orin 的 compute capability 8.7。
+- `GGML_CUDA_NO_VMM=ON`：Jetson 是 UMA（统一内存）架构，Tegra 上不支持 CUDA VMM（`cuMemCreate` 虚拟内存管理），必须关闭。
+- `GGML_CUDA_FA_QUANTS=all`：为 FlashAttention 向量内核编译全部 49 种 K/V 量化组合。这是 `GGML_CUDA_FA_ALL_QUANTS` 的替代写法，后者已被上游标记为 deprecated（仍可用但会打印警告）。
+- `GGML_CUDA_CCCL_VERSION=v3.4.3`：JetPack 7.2 的 CUDA 13.2 自带 CCCL 3.0.2，低于上游要求的 3.4.3；显式拉取 3.4.3 后 top-k 采样才会使用 CUB `DeviceTopK` 快速路径，否则退回较慢的基数排序实现。该选项在 configure 阶段从 GitHub 浅克隆 CCCL，需要网络可达 `github.com`；若网络受限可以省略，仅影响 top-k 采样速度。
 
 更新引擎后不需要立即执行重启命令。`llama-server` 来自宿主机挂载，服务关闭时，下次启动该服务就会自动使用新二进制：
 
