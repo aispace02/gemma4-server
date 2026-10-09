@@ -72,19 +72,6 @@ STATUS_FAILED = "失败"
 
 MODEL_SPECS = (
     ModelSpec(
-        "gemma4-31b",
-        "unsloth/gemma-4-31B-it-qat-GGUF",
-        "gemma-4-31B-it-qat-UD-Q4_K_XL.gguf",
-        "Gemma-4 31B Dense QAT",
-    ),
-    ModelSpec(
-        "gemma4-26b-a4b",
-        "unsloth/gemma-4-26B-A4B-it-GGUF",
-        "gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf",
-        "Gemma-4 26B-A4B MoE (Unsloth Dynamic)",
-        ("MTP/mtp-gemma-4-26B-A4B-it-Q8_0.gguf",),
-    ),
-    ModelSpec(
         "gemma4-12b-agentic",
         "hf/yuxinlu1-gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF",
         "gemma4-v2-Q6_K.gguf",

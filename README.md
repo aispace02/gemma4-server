@@ -119,19 +119,12 @@ curl -sN http://<JETSON_IP>:8085/v1/chat/completions \
 
 | Compose 服务 | 模型 | 后端端口 | 上下文 | 适用场景 |
 | --- | --- | ---: | ---: | --- |
-| `gemma4-31b` | Gemma-4 31B QAT | 8080 | 64K | 高质量通用对话（模型文件已清理†） |
-| `gemma4-26b-a4b` | Gemma-4 26B-A4B | 8081 | 64K | 平衡速度与质量（模型文件已清理†） |
 | `gemma4-12b-agentic` | Gemma-4 12B Agentic | 8082 | 64K | 多轮 Agent 和代码分析 |
 | `qwen36-35b-moe` | Qwen3.6 35B-A3B MoE | 8084 | 128K | 长上下文、Agent、高吞吐 |
 | `qwen38-27b` | Qwen3.8 27B Dense | 8085 | 256K | 单点推理质量和编程任务 |
 | `qwen-image` | Qwen-Image-2.1 (sd.cpp) | 8083 | — | 文生图、图片编辑（支持输入参考图） |
 
-> **† 模型精简备注（2026-10-09）**：`gemma4-31b` 与 `gemma4-26b-a4b` 的本地模型文件已删除（含 26B 的 MTP draft，合计约 33.5 GiB）。原因：前者的质量型 dense 定位与 `qwen38-27b` 重叠，后者的快速 MoE 定位与 `qwen36-35b-moe` 重叠。两个服务的部署配置在 `docker-compose.yml` 与 [`scripts/update-models.py`](scripts/update-models.py) 中完整保留，需要时执行以下命令即可恢复，无需改动任何配置：
->
-> ```bash
-> python3 scripts/update-models.py gemma4-31b gemma4-26b-a4b
-> docker compose up -d gemma4-31b gemma4-26b-a4b
-> ```
+> **模型精简备注（2026-10-09）**：`gemma4-31b`（8080）与 `gemma4-26b-a4b`（8081）已整体移除：本地模型文件（含 26B 的 MTP draft，合计约 33.5 GiB）、compose 服务定义与 `update-models.py` 更新条目均已删除。原因：前者的质量型 dense 定位与 `qwen38-27b` 重叠，后者的快速 MoE 定位与 `qwen36-35b-moe` 重叠。如需恢复，可从 git 历史找回服务定义与模型下载信息（本次清理前的提交），手动下载模型后重新启用。
 
 ### 2.1 服务管理命令
 
@@ -580,8 +573,6 @@ tmux attach -t forge
 
 | 服务 | 后端 URL | Forge URL |
 | --- | --- | --- |
-| `gemma4-31b` | `http://<IP>:8080/v1` | `http://<IP>:9080/v1` |
-| `gemma4-26b-a4b` | `http://<IP>:8081/v1` | `http://<IP>:9081/v1` |
 | `gemma4-12b-agentic` | `http://<IP>:8082/v1` | `http://<IP>:9082/v1` |
 | `qwen36-35b-moe` | `http://<IP>:8084/v1` | `http://<IP>:9084/v1` |
 | `qwen38-27b` | `http://<IP>:8085/v1` | `http://<IP>:9085/v1` |

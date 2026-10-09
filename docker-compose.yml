@@ -71,62 +71,6 @@ x-sd-common: &sd-common
       hard: -1
 
 services:
-  gemma4-31b:
-    <<: *llama-common
-    container_name: gemma4-31b
-    # [2026-10-09 精简] 本地模型文件已删除（质量型 dense 档与 qwen38-27b 重叠）。
-    # 部署配置保留，恢复方式:
-    #   python3 scripts/update-models.py gemma4-31b && docker compose up -d gemma4-31b
-    command: >
-      llama-server
-      -m /root/.cache/huggingface/gemma-4-31B-it-qat-UD-Q4_K_XL.gguf
-      --host 0.0.0.0
-      --port 8080
-      -ngl 999
-      -c 65536
-      --flash-attn on
-      --cache-type-k q8_0
-      --cache-type-v q4_0
-      -t 8
-      --batch-size 512
-      --ubatch-size 256
-      --load-mode mlock
-      --jinja
-      --cache-ram 8192
-      --swa-checkpoints 4
-      --n-predict 8192
-      --repeat-penalty 1.1
-
-  gemma4-26b-a4b:
-    <<: *llama-common
-    container_name: gemma4-26b-a4b
-    # [2026-10-09 精简] 本地模型文件（含 MTP draft）已删除（快速 MoE 档与
-    # qwen36-35b-moe 重叠）。部署配置保留，恢复方式:
-    #   python3 scripts/update-models.py gemma4-26b-a4b && docker compose up -d gemma4-26b-a4b
-    command: >
-      llama-server
-      -m /root/.cache/huggingface/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
-      --model-draft /root/.cache/huggingface/MTP/mtp-gemma-4-26B-A4B-it-Q8_0.gguf
-      --spec-type draft-mtp
-      --spec-draft-n-max 2
-      --parallel 1
-      --host 0.0.0.0
-      --port 8081
-      -ngl 999
-      -c 65536
-      --flash-attn on
-      --cache-type-k q8_0
-      --cache-type-v q4_0
-      -t 8
-      --batch-size 512
-      --ubatch-size 256
-      --load-mode mlock
-      --jinja
-      --cache-ram 8192
-      --swa-checkpoints 4
-      --n-predict 8192
-      --repeat-penalty 1.1
-
   gemma4-12b-agentic:
     <<: *llama-common
     container_name: gemma4-12b-agentic
