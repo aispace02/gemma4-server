@@ -76,7 +76,7 @@ Host（Jetson Orin）                         Image（docker compose build）
 docker compose build
 
 # 也可以只构建一个服务
-docker compose build gemma4-31b
+docker compose build qwen38-27b
 ```
 
 ### 1.3 下载模型并启动服务
@@ -88,10 +88,10 @@ docker compose build gemma4-31b
 python3 scripts/update-models.py --list
 
 # 下载一个模型；默认写入 /mnt/ssd/huggingface
-python3 scripts/update-models.py gemma4-31b
+python3 scripts/update-models.py qwen38-27b
 
 # 启动单个模型服务
-docker compose up -d gemma4-31b
+docker compose up -d qwen38-27b
 ```
 
 如果系统没有安装 `modelscope`，脚本会自动通过 `uv run --no-project --with modelscope` 临时运行，不会修改项目虚拟环境。启动前脚本会清除代理变量，模型下载始终直连中国大陆 ModelScope。
@@ -101,10 +101,10 @@ docker compose up -d gemma4-31b
 在局域网内另一台设备上执行：
 
 ```bash
-curl -sN http://<JETSON_IP>:8080/v1/chat/completions \
+curl -sN http://<JETSON_IP>:8085/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "cyankiwi/gemma-4-31B-it-AWQ-4bit",
+    "model": "qwen3.8-27b",
     "messages": [{"role": "user", "content": "你好"}],
     "chat_template_kwargs": {"enable_thinking": true},
     "stream": true
@@ -119,12 +119,19 @@ curl -sN http://<JETSON_IP>:8080/v1/chat/completions \
 
 | Compose 服务 | 模型 | 后端端口 | 上下文 | 适用场景 |
 | --- | --- | ---: | ---: | --- |
-| `gemma4-31b` | Gemma-4 31B QAT | 8080 | 64K | 高质量通用对话 |
-| `gemma4-26b-a4b` | Gemma-4 26B-A4B | 8081 | 64K | 平衡速度与质量 |
+| `gemma4-31b` | Gemma-4 31B QAT | 8080 | 64K | 高质量通用对话（模型文件已清理†） |
+| `gemma4-26b-a4b` | Gemma-4 26B-A4B | 8081 | 64K | 平衡速度与质量（模型文件已清理†） |
 | `gemma4-12b-agentic` | Gemma-4 12B Agentic | 8082 | 64K | 多轮 Agent 和代码分析 |
 | `qwen36-35b-moe` | Qwen3.6 35B-A3B MoE | 8084 | 128K | 长上下文、Agent、高吞吐 |
 | `qwen38-27b` | Qwen3.8 27B Dense | 8085 | 256K | 单点推理质量和编程任务 |
 | `qwen-image` | Qwen-Image-2.1 (sd.cpp) | 8083 | — | 文生图、图片编辑（支持输入参考图） |
+
+> **† 模型精简备注（2026-10-09）**：`gemma4-31b` 与 `gemma4-26b-a4b` 的本地模型文件已删除（含 26B 的 MTP draft，合计约 33.5 GiB）。原因：前者的质量型 dense 定位与 `qwen38-27b` 重叠，后者的快速 MoE 定位与 `qwen36-35b-moe` 重叠。两个服务的部署配置在 `docker-compose.yml` 与 [`scripts/update-models.py`](scripts/update-models.py) 中完整保留，需要时执行以下命令即可恢复，无需改动任何配置：
+>
+> ```bash
+> python3 scripts/update-models.py gemma4-31b gemma4-26b-a4b
+> docker compose up -d gemma4-31b gemma4-26b-a4b
+> ```
 
 ### 2.1 服务管理命令
 
@@ -235,30 +242,30 @@ EOF
 
 ```bash
 # 先检查将要执行的 ModelScope 命令，不产生网络请求
-python3 scripts/update-models.py --dry-run gemma4-31b
+python3 scripts/update-models.py --dry-run qwen38-27b
 
 # 更新一个或多个模型
-python3 scripts/update-models.py gemma4-31b gemma4-12b-agentic
+python3 scripts/update-models.py qwen38-27b gemma4-12b-agentic
 
 # 更新全部模型；请先确认磁盘空间充足
 python3 scripts/update-models.py --all
 
 # 使用其他模型目录；必须同步修改 docker-compose.yml 中的模型路径
-python3 scripts/update-models.py --model-dir /mnt/ssd/huggingface-test gemma4-31b
+python3 scripts/update-models.py --model-dir /mnt/ssd/huggingface-test qwen38-27b
 ```
 
 下载成功后重启对应服务：
 
 ```bash
-docker compose restart gemma4-31b
+docker compose restart qwen38-27b
 ```
 
 如需手动下载，可安装 ModelScope 后调用 `modelscope download`。推荐使用 `uv` 隔离安装，避免污染系统 Python：
 
 ```bash
 uv tool install --python 3.12 modelscope
-modelscope download unsloth/gemma-4-31B-it-qat-GGUF \
-    gemma-4-31B-it-qat-UD-Q4_K_XL.gguf \
+modelscope download unsloth/Qwen3.8-27B-GGUF \
+    Qwen3.8-27B-UD-Q4_K_XL.gguf \
     --local-dir /mnt/ssd/huggingface --max-workers 1
 ```
 
@@ -300,13 +307,13 @@ sudo ldconfig
 更新引擎后不需要立即执行重启命令。`llama-server` 来自宿主机挂载，服务关闭时，下次启动该服务就会自动使用新二进制：
 
 ```bash
-docker compose up -d gemma4-31b
+docker compose up -d qwen38-27b
 ```
 
 如果对应服务正在运行，再逐个重启它：
 
 ```bash
-docker compose restart gemma4-31b
+docker compose restart qwen38-27b
 ```
 
 > 若 `/usr/local/lib` 不在动态链接器搜索路径中，执行 `echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/usr_local_lib.conf && sudo ldconfig`。
