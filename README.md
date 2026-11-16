@@ -1,32 +1,10 @@
-# Gemma-4 Local Servers on Jetson Orin
+# Jetson Orin 本地推理服务
 
-本项目使用 Docker Compose 在 NVIDIA Jetson Orin AGX 上运行多个本地 GGUF 推理服务。当前主要面向 JetPack 7.2（CUDA 13.2.1 / Ubuntu 24.04），通过宿主机编译 `llama.cpp`（LLM 文本服务）与 `stable-diffusion.cpp`（`qwen-image` 图像生成/编辑服务，安装到独立前缀 `/opt/sdcpp`），再由容器挂载运行。
+本项目使用 Docker Compose 在 NVIDIA Jetson Orin AGX 上运行本地 GGUF 推理服务：`qwen38-27b`（LLM 文本服务，llama.cpp）与 `qwen-image`（文生图/图片编辑，stable-diffusion.cpp）。面向 JetPack 7.2（CUDA 13.2.1 / Ubuntu 24.04）：两个引擎均在宿主机编译（llama.cpp 安装到 `/usr/local`，sd.cpp 安装到独立前缀 `/opt/sdcpp`），容器只读挂载二进制运行。
 
 ## 0. 架构总览
 
-### 0.1 构建与运行流程
-
-```text
-宿主机准备
-llama.cpp 编译并安装到 /usr/local
-        │
-        ├──────────────────────────────────────────────┐
-        │                                              │
-镜像构建                                         容器启动
-Dockerfile + docker compose build                 docker compose up
-        │                                              │
-        ▼                                              ▼
-Image                                           Container
-CUDA runtime + libcurl4/libgomp1          Image + bind mounts
-                                                     + NVIDIA Runtime
-                                                            │
-                                                            ▼
-                                      llama-server 从 Host 挂载路径加载 GGUF
-```
-
-`llama.cpp` 在宿主机编译并安装到 `/usr/local`；`docker compose build` 只构建运行时镜像，不会启动容器或下载模型。`docker compose up` 才会基于镜像创建容器，并按 Compose 配置挂载宿主机文件、GPU 和启动命令。
-
-### 0.2 Host、Image 与 Container 的关系
+`docker compose build` 只构建运行时镜像（CUDA runtime + 少量系统库），不编译引擎、不下载模型；`docker compose up` 才创建容器，按 Compose 配置挂载宿主机文件、GPU 和启动命令。
 
 ```text
 Host（Jetson Orin）                         Image（docker compose build）
@@ -37,15 +15,16 @@ Host（Jetson Orin）                         Image（docker compose build）
 │ /usr/local/bin               │──挂载──▶  └──────────────┬───────────┘
 │ /usr/local/lib               │                          │
 │   llama-server + 共享库     │                          │ 创建
-│                              │                          ▼
-│ /mnt/ssd/huggingface         │           Container（docker compose up）
-│   GGUF + MTP 模型            │           ┌──────────────────────────┐
-│                              │           │ 来自 Image 的运行时依赖    │
-│ repository                   │           │ /opt/llama/bin             │◀─
-│   Dockerfile                 │           │ /opt/llama/lib             │◀─
-│   docker-compose.yml         │           │ /root/.cache/huggingface   │◀─
-└──────────────────────────────┘           │ NVIDIA Runtime 注入 GPU    │
-                                           └──────────────────────────┘
+│ /opt/sdcpp/bin               │                          ▼
+│   sd-server（静态链接）      │           Container（docker compose up）
+│                              │           ┌──────────────────────────┐
+│ /mnt/ssd/huggingface         │           │ 来自 Image 的运行时依赖    │
+│   GGUF + MTP 模型            │           │ /opt/llama/bin             │◀─
+│                              │           │ /opt/llama/lib             │◀─
+│ repository                   │           │ /opt/sdcpp/bin             │◀─
+│   Dockerfile                 │           │ /root/.cache/huggingface   │◀─
+│   docker-compose.yml         │           │ NVIDIA Runtime 注入 GPU    │
+└──────────────────────────────┘           └──────────────────────────┘
 ```
 
 | 内容 | 是否进入 Image | Host 来源 | Container 内路径 | 更新方式 |
@@ -63,7 +42,7 @@ Host（Jetson Orin）                         Image（docker compose build）
 
 - NVIDIA Jetson Orin AGX，已安装 JetPack 7.2 和 NVIDIA Container Toolkit
 - Docker 与 Docker Compose v2
-- SSD 挂载到 `/mnt/ssd/`，且存在 `/mnt/ssd/huggingface/` 模型缓存目录
+- SSD 挂载到 `/mnt/ssd/`，且存在 `/mnt/ssd/huggingface/` 模型目录
 - 宿主机已编译并安装 `llama.cpp` 到 `/usr/local`；若尚未准备，见第 4 节
 - （可选，`qwen-image` 图像服务需要）宿主机已编译并安装 `stable-diffusion.cpp` 到 `/opt/sdcpp`；见 4.2 节
 
@@ -119,12 +98,8 @@ curl -sN http://<JETSON_IP>:8085/v1/chat/completions \
 
 | Compose 服务 | 模型 | 后端端口 | 上下文 | 适用场景 |
 | --- | --- | ---: | ---: | --- |
-| `gemma4-12b-agentic` | Gemma-4 12B Agentic | 8082 | 64K | 多轮 Agent 和代码分析 |
-| `qwen36-35b-moe` | Qwen3.6 35B-A3B MoE | 8084 | 128K | 长上下文、Agent、高吞吐 |
-| `qwen38-27b` | Qwen3.8 27B Dense | 8085 | 256K | 单点推理质量和编程任务 |
+| `qwen38-27b` | Qwen3.8 27B Dense（MTP 推测解码） | 8085 | 256K | 通用推理、编程、长上下文 |
 | `qwen-image` | Qwen-Image-2.1 (sd.cpp) | 8083 | — | 文生图、图片编辑（支持输入参考图） |
-
-> **模型精简备注（2026-10-09）**：`gemma4-31b`（8080）与 `gemma4-26b-a4b`（8081）已整体移除：本地模型文件（含 26B 的 MTP draft，合计约 33.5 GiB）、compose 服务定义与 `update-models.py` 更新条目均已删除。原因：前者的质量型 dense 定位与 `qwen38-27b` 重叠，后者的快速 MoE 定位与 `qwen36-35b-moe` 重叠。如需恢复，可从 git 历史找回服务定义与模型下载信息（本次清理前的提交），手动下载模型后重新启用。
 
 ### 2.1 服务管理命令
 
@@ -132,7 +107,7 @@ curl -sN http://<JETSON_IP>:8085/v1/chat/completions \
 # 查看状态
 docker compose ps
 
-# 启动单个服务；不要无参数启动全部大模型
+# 启动单个服务
 docker compose up -d qwen38-27b
 
 # 查看实时日志
@@ -227,7 +202,7 @@ EOF
 - 生成尺寸必须能被 32 整除；采样参数通过 `sd_cpp_extra_args` 内嵌在 `prompt` 中传递（如 `<sd_cpp_extra_args>{"sample_params":{"sample_steps":28}}</sd_cpp_extra_args>`，原生 API 直接写在请求体），完整字段见 sd.cpp 仓库 `examples/server/api.md`。
 - 需要 RGBA 透明输出时，按官方推荐在 prompt 中使用固定句式：`This is an RGBA image with transparency. <描述>. The image has alpha channel and the background is transparent.`；透明通道仅保留在 png/webp 输出。
 - AGX 实测速度（Q4_K_M，832×832）：文生图 12 步约 2.5 分钟；编辑默认步数约 4 分钟。
-- 该服务权重合计约 10.4 GiB（常驻 VRAM 约 10.2 GiB），与多个 LLM 服务同时运行前请先确认统一内存余量（见 2.2 节监控）。
+- 该服务权重合计约 10.4 GiB（常驻 VRAM 约 10.2 GiB），与 `qwen38-27b` 同时运行前请先确认统一内存余量（见 2.2 节监控）。
 
 ## 3. 模型更新
 
@@ -238,7 +213,7 @@ EOF
 python3 scripts/update-models.py --dry-run qwen38-27b
 
 # 更新一个或多个模型
-python3 scripts/update-models.py qwen38-27b gemma4-12b-agentic
+python3 scripts/update-models.py qwen38-27b qwen-image
 
 # 更新全部模型；请先确认磁盘空间充足
 python3 scripts/update-models.py --all
@@ -294,7 +269,7 @@ sudo ldconfig
 
 - `CMAKE_CUDA_ARCHITECTURES=87`：Orin 的 compute capability 8.7。
 - `GGML_CUDA_NO_VMM=ON`：Jetson 是 UMA（统一内存）架构，Tegra 上不支持 CUDA VMM（`cuMemCreate` 虚拟内存管理），必须关闭。
-- `GGML_CUDA_FA_QUANTS=all`：为 FlashAttention 向量内核编译全部 49 种 K/V 量化组合。这是 `GGML_CUDA_FA_ALL_QUANTS` 的替代写法，后者已被上游标记为 deprecated（仍可用但会打印警告）。
+- `GGML_CUDA_FA_QUANTS=all`：为 FlashAttention 向量内核编译全部 64 种 K/V 量化组合（8 种类型两两组合，v1.0.0 起含 OCP FP8 `f8_e4m3`）。这是 `GGML_CUDA_FA_ALL_QUANTS` 的替代写法，后者已被上游标记为 deprecated（仍可用但会打印警告）。
 - `GGML_CUDA_CCCL_VERSION=v3.4.3`：JetPack 7.2 的 CUDA 13.2 自带 CCCL 3.0.2，低于上游要求的 3.4.3；显式拉取 3.4.3 后 top-k 采样才会使用 CUB `DeviceTopK` 快速路径，否则退回较慢的基数排序实现。该选项在 configure 阶段从 GitHub 浅克隆 CCCL，需要网络可达 `github.com`；若网络受限可以省略，仅影响 top-k 采样速度。
 
 更新引擎后不需要立即执行重启命令。`llama-server` 来自宿主机挂载，服务关闭时，下次启动该服务就会自动使用新二进制：
@@ -353,7 +328,7 @@ docker compose restart qwen-image
 ### 5.1 架构
 
 - `Dockerfile` 只安装 `libcurl4` 和 `libgomp1` 等运行时依赖，不编译推理引擎。
-- 模型缓存通过 `/mnt/ssd/huggingface:/root/.cache/huggingface` 共享。
+- 模型目录通过 `/mnt/ssd/huggingface:/root/.cache/huggingface` 共享。
 - `llama-server` 二进制和共享库从宿主机 `/usr/local` 挂载到 `/opt/llama`，避开 NVIDIA CDI hook 对标准库路径的扫描。
 - `runtime: nvidia`、`NVIDIA_VISIBLE_DEVICES=all` 和 `devices: nvidia.com/gpu=all` 提供 GPU 访问。
 - `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 启用 Jetson UMA 统一内存调度。
@@ -365,10 +340,10 @@ docker compose restart qwen-image
 docker compose config --quiet
 
 # 更新一个服务
-docker compose up -d qwen36-35b-moe
+docker compose up -d qwen38-27b
 
 # 如果某个服务没有自动应用新配置，再强制重建该服务
-docker compose up -d --force-recreate qwen36-35b-moe
+docker compose up -d --force-recreate qwen38-27b
 ```
 
 首次执行 `docker compose up -d <service>` 时，如果本地镜像不存在，Compose 会自动构建。
@@ -431,7 +406,7 @@ LD_LIBRARY_PATH=/opt/llama/lib:/usr/lib/aarch64-linux-gnu/nvidia:/opt/nvidia/l4t
 
 ### 6.1 扩大 Swap
 
-长上下文或多个大模型可能超过 64GB 物理内存，导致容器被 OOM killer 终止。可在 SSD 上创建 16GB swap：
+长上下文可能超过 64GB 物理内存，导致容器被 OOM killer 终止。可在 SSD 上创建 16GB swap：
 
 ```bash
 echo 3 | sudo tee /proc/sys/vm/drop_caches
@@ -477,7 +452,7 @@ docker compose config | grep -A8 -E 'runtime:|devices:'
 
 ## 7. Pi Agent 接入
 
-完整示例配置见 `backup/pi-agent` 和 `backup/prime-agent`。以下是最小接入步骤。
+完整历史示例配置见 `docs/backup/pi-agent` 和 `docs/backup/prime-agent`（存档，含已移除模型的旧条目）。以下是最小接入步骤。
 
 ### 7.1 注册本地模型
 
@@ -486,29 +461,15 @@ docker compose config | grep -A8 -E 'runtime:|devices:'
 ```json
 {
   "providers": {
-    "local-gemma-12b-agentic": {
-      "baseUrl": "http://192.168.137.13:8082/v1",
+    "local-qwen38-27b": {
+      "baseUrl": "http://192.168.137.13:8085/v1",
       "api": "openai-completions",
       "apiKey": "not-needed",
       "models": [
         {
-          "id": "gemma4-v2-Q6_K",
-          "name": "Local Gemma-4 12B Agentic",
-          "contextWindow": 65536,
-          "maxOutputTokens": 8192,
-          "input": ["text"]
-        }
-      ]
-    },
-    "local-qwen36-35b-moe": {
-      "baseUrl": "http://192.168.137.13:8084/v1",
-      "api": "openai-completions",
-      "apiKey": "not-needed",
-      "models": [
-        {
-          "id": "qwen3.6-35b-moe",
-          "name": "Local Qwen3.6 35B MoE",
-          "contextWindow": 131072,
+          "id": "qwen3.8-27b",
+          "name": "Local Qwen3.8 27B",
+          "contextWindow": 262144,
           "maxOutputTokens": 8192,
           "input": ["text"]
         }
@@ -518,7 +479,7 @@ docker compose config | grep -A8 -E 'runtime:|devices:'
 }
 ```
 
-其他服务可按同一格式注册，端口见第 2 节。完整历史示例保留在 `backup/pi-agent`。
+`qwen-image` 不是 chat 模型，无需注册；其他服务可按同一格式添加，端口见第 2 节。
 
 ### 7.2 设置默认模型
 
@@ -526,8 +487,8 @@ docker compose config | grep -A8 -E 'runtime:|devices:'
 
 ```json
 {
-  "defaultProvider": "local-gemma-12b-agentic",
-  "defaultModel": "gemma4-v2-Q6_K",
+  "defaultProvider": "local-qwen38-27b",
+  "defaultModel": "qwen3.8-27b",
   "defaultThinkingLevel": "off"
 }
 ```
@@ -535,58 +496,13 @@ docker compose config | grep -A8 -E 'runtime:|devices:'
 会话中可输入 `/model` 切换模型，例如：
 
 ```text
-/model local-gemma-12b-agentic/gemma4-v2-Q6_K
-/model local-qwen36-35b-moe/qwen3.6-35b-moe
+/model local-qwen38-27b/qwen3.8-27b
 ```
 
-## 8. Forge Proxy 接入
-
-[Forge](https://github.com/antoinezambelli/forge) 是自托管 LLM tool-calling 可靠性代理，用于在客户端和 `llama-server` 之间增强工具调用解析、校验和重试。
-
-### 8.1 安装与启动
-
-```bash
-uv tool install --python 3.12 forge-guardrails
-forge-proxy --help
-```
-
-推荐让 Forge 端口等于后端端口 + 1000。示例：
-
-```bash
-forge-proxy --backend-url http://localhost:8084 \
-  --host 0.0.0.0 --port 9084 --serialize -v
-```
-
-`--serialize` 强制串行化请求，防止单 GPU 后端并发导致 OOM。后台运行可用 `tmux`：
-
-```bash
-tmux new-session -d -s forge \
-  'forge-proxy --backend-url http://localhost:8084 --host 0.0.0.0 --port 9084 --serialize -v'
-tmux attach -t forge
-```
-
-分离会话按 `Ctrl+B`，然后按 `D`。
-
-### 8.2 客户端配置
-
-将 OpenAI 兼容客户端的 `base_url` 指向 Forge 端口：
-
-| 服务 | 后端 URL | Forge URL |
-| --- | --- | --- |
-| `gemma4-12b-agentic` | `http://<IP>:8082/v1` | `http://<IP>:9082/v1` |
-| `qwen36-35b-moe` | `http://<IP>:8084/v1` | `http://<IP>:9084/v1` |
-| `qwen38-27b` | `http://<IP>:8085/v1` | `http://<IP>:9085/v1` |
-
-例如 `aider`：
-
-```bash
-aider --openai-api-base http://<JETSON_IP>:9084/v1 --openai-api-key not-needed
-```
-
-## 9. 参考资源
+## 8. 参考资源
 
 - [NVIDIA AI IOT](https://github.com/NVIDIA-AI-IOT)
 - [Jetson Containers Quickstart](https://forums.developer.nvidia.com/t/jetson-containers-quickstart-on-nvidia-jetson-agx-64gb/365700)
-- [Forge 官方仓库](https://github.com/antoinezambelli/forge)
+- [llama.cpp](https://github.com/ggml-org/llama.cpp)（qwen38-27b 服务引擎）
 - [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp)（qwen-image 服务引擎；Qwen-Image-2.1 用法见其 `docs/qwen_image_2.1.md`，API 见 `examples/server/api.md`）
 - [unsloth/Qwen-Image-2.1-GGUF（ModelScope）](https://www.modelscope.cn/models/unsloth/Qwen-Image-2.1-GGUF)（扩散模型 GGUF；VAE/编码器/mmproj 见 `scripts/update-models.py` 中 `qwen-image` 条目）

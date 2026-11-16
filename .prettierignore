@@ -1,9 +1,12 @@
 # Ignore the llama.cpp submodule
+
 llama.cpp/
 
 # Ignore build directories
+
 llama.cpp/build/
 build/
 
 # Ignore git metadata
+
 .git/

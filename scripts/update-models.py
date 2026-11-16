@@ -11,19 +11,18 @@ silently be used for the model download.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import datetime
 import json
 import os
-from pathlib import Path
 import shlex
 import shutil
 import subprocess
 import sys
 import urllib.parse
 import urllib.request
+from collections import Counter
 from dataclasses import dataclass
-
+from pathlib import Path
 
 DEFAULT_MODEL_DIR = "/mnt/ssd/huggingface"
 
@@ -71,18 +70,6 @@ STATUS_FAILED = "失败"
 
 
 MODEL_SPECS = (
-    ModelSpec(
-        "gemma4-12b-agentic",
-        "hf/yuxinlu1-gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF",
-        "gemma4-v2-Q6_K.gguf",
-        "Gemma-4 12B Agentic",
-    ),
-    ModelSpec(
-        "qwen36-35b-moe",
-        "unsloth/Qwen3.6-35B-A3B-GGUF",
-        "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
-        "Qwen3.6 35B-A3B MoE",
-    ),
     ModelSpec(
         "qwen38-27b",
         "unsloth/Qwen3.8-27B-GGUF",
@@ -243,7 +230,7 @@ def format_mtime(mtime_ns: int) -> str:
     """Format nanosecond timestamp to YYYY-MM-DD string in local time."""
 
     dt = datetime.datetime.fromtimestamp(
-        mtime_ns / 1e9, tz=datetime.timezone.utc
+        mtime_ns / 1e9, tz=datetime.UTC
     ).astimezone()
     return dt.strftime("%Y-%m-%d")
 
@@ -299,7 +286,7 @@ def fetch_remote_file_date(repository: str, filename: str) -> str | None:
             committed = remote_file.get("CommittedDate") if remote_file else None
             if isinstance(committed, (int, float)):
                 dt = datetime.datetime.fromtimestamp(
-                    committed, tz=datetime.timezone.utc
+                    committed, tz=datetime.UTC
                 ).astimezone()
                 return dt.strftime("%Y-%m-%d")
             elif isinstance(committed, str) and len(committed) >= 10:
