@@ -19,13 +19,18 @@
 #         -DGGML_CUDA=ON \
 #         -DCMAKE_CUDA_ARCHITECTURES=87 \
 #         -DGGML_CUDA_FA=ON \
-#         -DGGML_CUDA_FA_ALL_QUANTS=ON \
+#         -DGGML_CUDA_FA_QUANTS=all \
 #         -DGGML_CUDA_GRAPHS=ON \
-#         -DGGML_CUDA_NO_VMM=ON
+#         -DGGML_CUDA_NO_VMM=ON \
+#         -DGGML_CUDA_CCCL_VERSION=v3.4.3
 #     cmake --build llama.cpp/build --parallel
 #     sudo cmake --install llama.cpp/build --prefix /usr/local
 #     sudo ldconfig
 #     docker compose restart   # 无需 build，直接重启即可
+#
+#   注: GGML_CUDA_FA_ALL_QUANTS 已被上游弃用（仍可用但打印警告），
+#       统一改用 GGML_CUDA_FA_QUANTS=all；CCCL 3.4.3 用于启用 CUB
+#       DeviceTopK 快速采样路径（详见 README 4.1 节）。
 #
 # 注意: 在 Jetson 上 runtime: nvidia 会自动将宿主机 CUDA 13.2.1 驱动库
 #       挂载进容器，宿主机编译的 ARM aarch64 二进制在容器内可直接运行。
