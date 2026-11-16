@@ -452,7 +452,7 @@ docker compose config | grep -A8 -E 'runtime:|devices:'
 
 ## 7. Pi Agent 接入
 
-完整历史示例配置见 `docs/backup/pi-agent` 和 `docs/backup/prime-agent`（存档，含已移除模型的旧条目）。以下是最小接入步骤。
+完整示例配置见 `docs/backup/pi-agent` 和 `docs/backup/prime-agent`。以下是最小接入步骤。
 
 ### 7.1 注册本地模型
 
