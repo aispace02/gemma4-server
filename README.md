@@ -7,32 +7,34 @@
 `docker compose build` 只构建运行时镜像（CUDA runtime + 少量系统库），不编译引擎、不下载模型；`docker compose up` 才创建容器，按 Compose 配置挂载宿主机文件、GPU 和启动命令。
 
 ```text
-Host（Jetson Orin）                         Image（docker compose build）
-┌──────────────────────────────┐           ┌──────────────────────────┐
-│ Jetson Linux / NVIDIA Driver │           │ CUDA runtime              │
-│ GPU + Container Toolkit      │           │ Ubuntu 24.04 基础层       │
-│                              │           │ libcurl4 + libgomp1       │
-│ /usr/local/bin               │──挂载──▶  └──────────────┬───────────┘
-│ /usr/local/lib               │                          │
-│   llama-server + 共享库     │                          │ 创建
-│ /opt/sdcpp/bin               │                          ▼
-│   sd-server（静态链接）      │           Container（docker compose up）
-│                              │           ┌──────────────────────────┐
-│ /mnt/ssd/huggingface         │           │ 来自 Image 的运行时依赖    │
-│   GGUF + MTP 模型            │           │ /opt/llama/bin             │◀─
-│                              │           │ /opt/llama/lib             │◀─
-│ repository                   │           │ /opt/sdcpp/bin             │◀─
-│   Dockerfile                 │           │ /root/.cache/huggingface   │◀─
-│   docker-compose.yml         │           │ NVIDIA Runtime 注入 GPU    │
-└──────────────────────────────┘           └──────────────────────────┘
+1. 构建阶段（docker compose build）
+   Dockerfile ──▶ 统一运行时镜像（两服务共用）
+                  nvcr.io/nvidia/cuda:13.2.1-runtime-ubuntu24.04 + libcurl4 + libgomp1
+                  （不编译推理引擎，不打包模型文件）
+
+2. 运行阶段（docker compose up，基于同一镜像启动独立容器）
+   Host（Jetson Orin）                        Containers（docker compose up）
+   ┌────────────────────────────────┐        ┌──────────────────────────────────┐
+   │ /usr/local/bin, /usr/local/lib │──:ro──▶│ qwen38-27b                       │
+   │   llama-server + 共享库        │        │   /opt/llama/bin, /opt/llama/lib │
+   ├────────────────────────────────┤        │   /root/.cache/huggingface       │
+   │ /opt/sdcpp/bin                 │──:ro──▶│ qwen-image                       │
+   │   sd-server（静态链接 ggml）   │        │   /opt/sdcpp/bin                 │
+   ├────────────────────────────────┤        │   /root/.cache/huggingface       │
+   │ /mnt/ssd/huggingface           │──rw───▶│ （两容器共用模型卷）             │
+   │   GGUF / MTP / VAE / mmproj    │        ├──────────────────────────────────┤
+   ├────────────────────────────────┤        │ 共同运行时注入：                 │
+   │ NVIDIA Driver / GPU (CDI)      │──注入─▶│   GPU 设备与驱动库               │
+   │ docker-compose.yml             │        │   network_mode: host / ulimits   │
+   └────────────────────────────────┘        └──────────────────────────────────┘
 ```
 
 | 内容 | 是否进入 Image | Host 来源 | Container 内路径 | 更新方式 |
 | --- | --- | --- | --- | --- |
-| CUDA 运行库和系统依赖 | 是 | NVIDIA NGC 基础镜像、Dockerfile | 镜像文件系统 | 修改 Dockerfile 后 `build` |
-| `llama-server` 二进制和共享库 | 否 | `/usr/local/bin`、`/usr/local/lib` | `/opt/llama/bin`、`/opt/llama/lib` | 宿主机编译安装后启动或重启服务 |
-| `sd-server` 二进制（stable-diffusion.cpp，静态链接） | 否 | `/opt/sdcpp/bin` | `/opt/sdcpp/bin` | 宿主机编译安装后启动或重启服务 |
-| GGUF 模型和 MTP 文件 | 否 | `/mnt/ssd/huggingface` | `/root/.cache/huggingface` | 使用模型更新脚本后启动或重启服务 |
+| CUDA 运行库和系统依赖 | 是 | NVIDIA NGC 基础镜像、`Dockerfile` | 镜像文件系统 | 修改 `Dockerfile` 后 `docker compose build` |
+| `llama-server` 二进制和共享库 | 否 | `/usr/local/bin`、`/usr/local/lib` | `qwen38-27b`：`/opt/llama/bin`、`/opt/llama/lib`（`:ro`） | 宿主机编译安装后启动或重启 `qwen38-27b` |
+| `sd-server` 二进制（静态链接 `ggml` 等内部库） | 否 | `/opt/sdcpp/bin` | `qwen-image`：`/opt/sdcpp/bin`（`:ro`） | 宿主机编译安装后启动或重启 `qwen-image` |
+| 模型权重和附属文件（GGUF、MTP、VAE、mmproj 等） | 否 | `/mnt/ssd/huggingface` | 两服务共用：`/root/.cache/huggingface` | 使用模型更新脚本后启动或重启对应服务 |
 | GPU 和 NVIDIA Driver | 否 | Jetson 宿主机 | NVIDIA Runtime 注入 | 更新 JetPack/驱动和宿主机配置 |
 | Compose 启动参数 | 否 | `docker-compose.yml` | 不复制到容器文件系统 | `docker compose up -d <service>` 重建容器 |
 
@@ -269,7 +271,7 @@ sudo ldconfig
 
 - `CMAKE_CUDA_ARCHITECTURES=87`：Orin 的 compute capability 8.7。
 - `GGML_CUDA_NO_VMM=ON`：Jetson 是 UMA（统一内存）架构，Tegra 上不支持 CUDA VMM（`cuMemCreate` 虚拟内存管理），必须关闭。
-- `GGML_CUDA_FA_QUANTS=all`：为 FlashAttention 向量内核编译全部 64 种 K/V 量化组合（8 种类型两两组合，v1.0.0 起含 OCP FP8 `f8_e4m3`）。这是 `GGML_CUDA_FA_ALL_QUANTS` 的替代写法，后者已被上游标记为 deprecated（仍可用但会打印警告）。
+- `GGML_CUDA_FA_QUANTS=all`：为 FlashAttention 内核（`fattn-vec`、`fattn-tile`、`fattn-mma-f16`）编译全部 64 种 K/V 量化组合（8 种类型两两组合，v1.0.0 起含 OCP FP8 `f8_e4m3`）。上游默认仅编译 5 种对称组合（不含 `qwen38-27b` 使用的 `--cache-type-k q8_0 --cache-type-v q4_0`），因此需要显式指定 `all`（也可按需精简为包含 `q8_0-q4_0` 的列表以缩短编译时间）。这是 `GGML_CUDA_FA_ALL_QUANTS` 的替代写法，后者已被上游标记为 deprecated（仍可用但会打印警告）。
 - `GGML_CUDA_CCCL_VERSION=v3.4.3`：JetPack 7.2 的 CUDA 13.2 自带 CCCL 3.0.2，低于上游要求的 3.4.3；显式拉取 3.4.3 后 top-k 采样才会使用 CUB `DeviceTopK` 快速路径，否则退回较慢的基数排序实现。该选项在 configure 阶段从 GitHub 浅克隆 CCCL，需要网络可达 `github.com`；若网络受限可以省略，仅影响 top-k 采样速度。
 
 更新引擎后不需要立即执行重启命令。`llama-server` 来自宿主机挂载，服务关闭时，下次启动该服务就会自动使用新二进制：
@@ -290,7 +292,7 @@ docker compose restart qwen38-27b
 
 ### 4.2 更新 stable-diffusion.cpp（/opt/sdcpp）
 
-`stable-diffusion.cpp` 是图像生成/编辑引擎（ggml 系，与 llama.cpp 同源但分工不同）。**必须安装到独立前缀 `/opt/sdcpp`**：它携带自己 fork 的 ggml，与 llama.cpp 安装在 `/usr/local/lib` 的 ggml 共享库同名但版本不同，混装会互相覆盖导致两边都损坏。默认静态链接（`SD_BUILD_SHARED_LIBS=OFF`），安装产物只有 `bin/sd-cli`、`bin/sd-server`，容器仅挂载 `/opt/sdcpp/bin`。
+`stable-diffusion.cpp` 是图像生成/编辑引擎（ggml 系，与 llama.cpp 同源但分工不同）。**必须安装到独立前缀 `/opt/sdcpp`**：它携带自己 fork 的 ggml，与 llama.cpp 安装在 `/usr/local/lib` 的 ggml 共享库同名但版本不同，混装会互相覆盖导致两边都损坏。默认静态链接 `ggml` 等内部库（`SD_BUILD_SHARED_LIBS=OFF`），仍动态链接镜像内的 CUDA runtime / `libgomp1` 与宿主机 NVIDIA 驱动库；安装产物只有 `bin/sd-cli`、`bin/sd-server`，`qwen-image` 容器仅只读挂载 `/opt/sdcpp/bin`。
 
 ```bash
 git submodule update --init --remote --checkout stable-diffusion.cpp
@@ -327,11 +329,12 @@ docker compose restart qwen-image
 
 ### 5.1 架构
 
-- `Dockerfile` 只安装 `libcurl4` 和 `libgomp1` 等运行时依赖，不编译推理引擎。
-- 模型目录通过 `/mnt/ssd/huggingface:/root/.cache/huggingface` 共享。
-- `llama-server` 二进制和共享库从宿主机 `/usr/local` 挂载到 `/opt/llama`，避开 NVIDIA CDI hook 对标准库路径的扫描。
-- `runtime: nvidia`、`NVIDIA_VISIBLE_DEVICES=all` 和 `devices: nvidia.com/gpu=all` 提供 GPU 访问。
-- `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 启用 Jetson UMA 统一内存调度。
+- `Dockerfile` 基于 `nvcr.io/nvidia/cuda:13.2.1-runtime-ubuntu24.04`，仅安装 `libcurl4` 和 `libgomp1` 等运行时依赖，不编译推理引擎；`qwen38-27b` 与 `qwen-image` 共用同一份 `Dockerfile`。
+- 模型目录通过 `/mnt/ssd/huggingface:/root/.cache/huggingface` 共享挂载到两个服务容器。
+- `qwen38-27b` 将宿主机 `/usr/local/bin` 与 `/usr/local/lib` 只读挂载到 `/opt/llama/bin` 与 `/opt/llama/lib`，避开 NVIDIA CDI hook 对标准库路径的扫描。
+- `qwen-image` 将宿主机 `/opt/sdcpp/bin` 只读挂载到 `/opt/sdcpp/bin`（`sd-server` 静态链接自带的 `ggml` fork，与 `/usr/local/lib` 中的 `llama.cpp` 共享库隔离）。
+- `runtime: nvidia`、`devices: nvidia.com/gpu=all`、`NVIDIA_VISIBLE_DEVICES=all` 与 `NVIDIA_DRIVER_CAPABILITIES=all` 提供 GPU 访问。
+- `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` 启用 Jetson UMA 统一内存调度；`network_mode: host` 复用宿主机网络；`ulimits.memlock: -1` 解除内存锁定上限。
 
 ### 5.2 更新 Compose 配置
 
@@ -348,9 +351,9 @@ docker compose up -d --force-recreate qwen38-27b
 
 首次执行 `docker compose up -d <service>` 时，如果本地镜像不存在，Compose 会自动构建。
 
-更新 `llama.cpp` 时，不需要重新构建镜像，也不需要清理 Docker 构建缓存；`llama-server` 二进制来自宿主机挂载，新容器启动时会直接使用新版引擎。
+更新 `llama.cpp` 或 `stable-diffusion.cpp` 时，不需要重新构建镜像，也不需要清理 Docker 构建缓存；`llama-server` 与 `sd-server` 二进制均来自宿主机只读挂载，新容器启动或重启后会直接使用新版引擎。
 
-更新 `Dockerfile` 时，才需要重新构建镜像；模型卷和宿主机 `/usr/local` 挂载不受影响：
+更新 `Dockerfile` 时，才需要重新构建镜像；模型卷和宿主机引擎挂载不受影响（两个服务共用同一 `Dockerfile`，全部更新可不带服务名执行 `docker compose build`）：
 
 ```bash
 docker compose build <service>
@@ -394,10 +397,14 @@ panic: runtime error: slice bounds out of range [:73] with capacity 71
    sudo systemctl restart docker
    ```
 
-由于禁用了 `update-ldcache`，Compose 已手动设置：
+由于禁用了 `update-ldcache`，Compose 已手动设置 `LD_LIBRARY_PATH`：
 
 ```bash
+# qwen38-27b
 LD_LIBRARY_PATH=/opt/llama/lib:/usr/lib/aarch64-linux-gnu/nvidia:/opt/nvidia/l4t-gpu-libs/nvgpu
+
+# qwen-image（静态链接 ggml，不挂载 /opt/llama/lib）
+LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu/nvidia:/opt/nvidia/l4t-gpu-libs/nvgpu
 ```
 
 不要添加 `openrm` 路径，否则 CUDA 设备可能无法识别。

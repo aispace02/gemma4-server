@@ -1,0 +1,10 @@
+{
+  "0": "Runtime Image & Service Containers",
+  "1": "Compose Anchors, Mounts & CDI",
+  "2": "File Fingerprinting & CLI Args",
+  "3": "ModelScope Env & CLI Runner",
+  "4": "Model Download & Date Check",
+  "5": "Model Spec Registry",
+  "6": "Update Result Reporting",
+  "7": "Timestamp Formatting Helper"
+}

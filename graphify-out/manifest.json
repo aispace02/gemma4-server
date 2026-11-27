@@ -1,0 +1,42 @@
+{
+  ".vscode/settings.json": {
+    "mtime": 1791503659.188132,
+    "ast_hash": "55743877f3ffd5fc834e97bc43a6e7bd",
+    "semantic_hash": "55743877f3ffd5fc834e97bc43a6e7bd"
+  },
+  ".zed/settings.json": {
+    "mtime": 1791504121.210629,
+    "ast_hash": "29ff42dcc17ba3c8dd5894b286c02cbe",
+    "semantic_hash": "29ff42dcc17ba3c8dd5894b286c02cbe"
+  },
+  "docs/backup/pi-agent/models.json": {
+    "mtime": 1794788569.9414148,
+    "ast_hash": "1c7a066969aa6762f54ceda90b122723",
+    "semantic_hash": "1c7a066969aa6762f54ceda90b122723"
+  },
+  "docs/backup/prime-agent/models.json": {
+    "mtime": 1794788570.1054146,
+    "ast_hash": "50a3ca0943a14b33e35e81abc3346f39",
+    "semantic_hash": "50a3ca0943a14b33e35e81abc3346f39"
+  },
+  "scripts/update-models.py": {
+    "mtime": 1794788176.613751,
+    "ast_hash": "b27adff65df04bcaa378d6271cac4788",
+    "semantic_hash": "b27adff65df04bcaa378d6271cac4788"
+  },
+  "README.md": {
+    "mtime": 1795752289.5610385,
+    "ast_hash": "e98ce42f733cf3ab86bb5546c3660520",
+    "semantic_hash": "e98ce42f733cf3ab86bb5546c3660520"
+  },
+  "docker-compose.yml": {
+    "mtime": 1794788282.5495741,
+    "ast_hash": "8c5371cd6e4a05e0915c2382541ac9f0",
+    "semantic_hash": "8c5371cd6e4a05e0915c2382541ac9f0"
+  },
+  "docs/backup/README.md": {
+    "mtime": 1787381407.7448528,
+    "ast_hash": "d0be16bac830fb22402cc6f5c58dbbac",
+    "semantic_hash": "d0be16bac830fb22402cc6f5c58dbbac"
+  }
+}
