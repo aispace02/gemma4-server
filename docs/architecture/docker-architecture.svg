@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 780" width="1280" height="780" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="1" data-visual-theme="Flat Icon" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 790" width="1280" height="790" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="1" data-visual-theme="Flat Icon" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
   <defs>
     <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#7c3aed"/>
@@ -43,128 +43,128 @@
     .metric-value { font-size: 9.5px; font-weight: 700; fill: #111827; }
     </style>
   </defs>
-  <rect data-graph-role="background" width="1280.0" height="780.0" fill="#ffffff"/>
+  <rect data-graph-role="background" width="1280.0" height="790.0" fill="#ffffff"/>
   <text x="640.0" y="56" text-anchor="middle" class="title">Jetson Orin Docker Inference Architecture</text>
   <text x="640.0" y="82" text-anchor="middle" class="subtitle">shared lean CUDA runtime image + read-only host engine mounts + shared model volume</text>
-  <g id="build-stage" data-graph-role="container" data-container-id="build-stage" data-semantic-role="boundary" data-graph-bounds="220,96,824,212">
-  <rect data-graph-role="container" x="220.0" y="96.0" width="604.0" height="116.0" rx="16.0" fill="none" stroke="#dbe5f1" stroke-width="1.4" stroke-dasharray="6 5"/>
-  <text x="238.0" y="120.0" class="section">1. BUILD STAGE (DOCKER COMPOSE BUILD)</text>
-    <rect id="build-stage-header" data-graph-role="reserved" data-reserved-kind="container-header" x="228" y="102" width="287.66" height="30" fill="none" stroke="none"/>
+  <g id="build-stage" data-graph-role="container" data-container-id="build-stage" data-semantic-role="boundary" data-graph-bounds="210,96,804,220">
+  <rect data-graph-role="container" x="210.0" y="96.0" width="594.0" height="124.0" rx="16.0" fill="none" stroke="#dbe5f1" stroke-width="1.4" stroke-dasharray="6 5"/>
+  <text x="228.0" y="120.0" class="section">1. BUILD STAGE (DOCKER COMPOSE BUILD)</text>
+    <rect id="build-stage-header" data-graph-role="reserved" data-reserved-kind="container-header" x="218" y="102" width="287.66" height="30" fill="none" stroke="none"/>
   </g>
-  <g id="runtime-plane" data-graph-role="container" data-container-id="runtime-plane" data-semantic-role="boundary" data-graph-bounds="40,296,1240,466">
-  <rect data-graph-role="container" x="40.0" y="296.0" width="1200.0" height="170.0" rx="16.0" fill="none" stroke="#dbe5f1" stroke-width="1.4" stroke-dasharray="6 5"/>
-  <text x="58.0" y="320.0" class="section">2. RUN STAGE (DOCKER COMPOSE UP)</text>
-    <rect id="runtime-plane-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="302" width="256.72" height="30" fill="none" stroke="none"/>
+  <g id="runtime-plane" data-graph-role="container" data-container-id="runtime-plane" data-semantic-role="boundary" data-graph-bounds="40,304,1240,474">
+  <rect data-graph-role="container" x="40.0" y="304.0" width="1200.0" height="170.0" rx="16.0" fill="none" stroke="#dbe5f1" stroke-width="1.4" stroke-dasharray="6 5"/>
+  <text x="58.0" y="328.0" class="section">2. RUN STAGE (DOCKER COMPOSE UP)</text>
+    <rect id="runtime-plane-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="310" width="256.72" height="30" fill="none" stroke="none"/>
   </g>
-  <g id="nvidia-plane" data-graph-role="container" data-container-id="nvidia-plane" data-semantic-role="boundary" data-graph-bounds="450,528,830,644">
-  <rect data-graph-role="container" x="450.0" y="528.0" width="380.0" height="116.0" rx="16.0" fill="none" stroke="#dbe5f1" stroke-width="1.4" stroke-dasharray="6 5"/>
-  <text x="468.0" y="552.0" class="section">3. HOST GPU &amp; CDI</text>
-    <rect id="nvidia-plane-header" data-graph-role="reserved" data-reserved-kind="container-header" x="458" y="534" width="143.1" height="30" fill="none" stroke="none"/>
+  <g id="nvidia-plane" data-graph-role="container" data-container-id="nvidia-plane" data-semantic-role="boundary" data-graph-bounds="450,536,830,660">
+  <rect data-graph-role="container" x="450.0" y="536.0" width="380.0" height="124.0" rx="16.0" fill="none" stroke="#dbe5f1" stroke-width="1.4" stroke-dasharray="6 5"/>
+  <text x="468.0" y="560.0" class="section">3. HOST GPU &amp; CDI</text>
+    <rect id="nvidia-plane-header" data-graph-role="reserved" data-reserved-kind="container-header" x="458" y="542" width="143.1" height="30" fill="none" stroke="none"/>
   </g>
-  <path id="b-image-to-qwen-image" data-graph-role="edge" data-edge-id="b-image-to-qwen-image" data-source="runtime-image" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 649,192 L 649,268 L 900,268 L 900,346" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
-  <path id="build-image" data-graph-role="edge" data-edge-id="build-image" data-source="dockerfile" data-target="runtime-image" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 470,164 L 510,164" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
-  <path id="a-image-to-qwen38" data-graph-role="edge" data-edge-id="a-image-to-qwen38" data-source="runtime-image" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 631,192 L 631,242 L 400,242 L 400,346" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
-  <path id="mount-llama" data-graph-role="edge" data-edge-id="mount-llama" data-source="host-llama" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 254,392 L 300,392" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
-  <path id="mount-models-qwen38" data-graph-role="edge" data-edge-id="mount-models-qwen38" data-source="host-models" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 546,392 L 500,392" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
-  <path id="mount-models-qwen-image" data-graph-role="edge" data-edge-id="mount-models-qwen-image" data-source="host-models" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 754,392 L 800,392" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
-  <path id="mount-sdcpp" data-graph-role="edge" data-edge-id="mount-sdcpp" data-source="host-sdcpp" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1046,392 L 1000,392" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
-  <path id="inject-gpu-qwen38" data-graph-role="edge" data-edge-id="inject-gpu-qwen38" data-source="host-nvidia" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 474,594 L 400,594 L 400,438" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <path id="inject-gpu-qwen-image" data-graph-role="edge" data-edge-id="inject-gpu-qwen-image" data-source="host-nvidia" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 806,594 L 900,594 L 900,438" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <g id="node-dockerfile" data-graph-role="node" data-node-id="dockerfile" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="244,136,470,192">
-  <rect x="244.0" y="136.0" width="226.0" height="56.0" rx="10.0" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="Dockerfile" data-text-max-width="202.0" x="357.0" y="164.0" text-anchor="middle" class="node-title" font-size="18">Dockerfile</text>
-  <text data-text-role="subtitle" data-full-text="cuda:13.2.1-runtime-ubuntu24.04" data-text-max-width="202.0" x="357.0" y="186.0" text-anchor="middle" class="node-sub" font-size="11.21">cuda:13.2.1-runtime-ubuntu24.04</text>
+  <path id="b-image-to-qwen-image" data-graph-role="edge" data-edge-id="b-image-to-qwen-image" data-source="runtime-image" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 659,200 L 659,276 L 900,276 L 900,354" fill="none" stroke="#2563eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="build-image" data-graph-role="edge" data-edge-id="build-image" data-source="dockerfile" data-target="runtime-image" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 452,168 L 520,168" fill="none" stroke="#2563eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a-image-to-qwen38" data-graph-role="edge" data-edge-id="a-image-to-qwen38" data-source="runtime-image" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 641,200 L 641,224 L 400,224 L 400,354" fill="none" stroke="#2563eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="mount-llama" data-graph-role="edge" data-edge-id="mount-llama" data-source="host-llama" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 254,400 L 300,400" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="mount-models-qwen38" data-graph-role="edge" data-edge-id="mount-models-qwen38" data-source="host-models" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 546,400 L 500,400" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="mount-models-qwen-image" data-graph-role="edge" data-edge-id="mount-models-qwen-image" data-source="host-models" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 754,400 L 800,400" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="mount-sdcpp" data-graph-role="edge" data-edge-id="mount-sdcpp" data-source="host-sdcpp" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1046,400 L 1000,400" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="inject-gpu-qwen38" data-graph-role="edge" data-edge-id="inject-gpu-qwen38" data-source="host-nvidia" data-target="svc-qwen38" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 474,606 L 400,606 L 400,446" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path id="inject-gpu-qwen-image" data-graph-role="edge" data-edge-id="inject-gpu-qwen-image" data-source="host-nvidia" data-target="svc-qwen-image" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 806,606 L 900,606 L 900,446" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <g id="node-dockerfile" data-graph-role="node" data-node-id="dockerfile" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="232,136,452,200">
+  <rect x="232.0" y="136.0" width="220.0" height="64.0" rx="10.0" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Dockerfile" data-text-max-width="196.0" x="342.0" y="168.0" text-anchor="middle" class="node-title" font-size="18">Dockerfile</text>
+  <text data-text-role="subtitle" data-full-text="cuda:13.2.1-runtime-ubuntu24.04" data-text-max-width="196.0" x="342.0" y="190.0" text-anchor="middle" class="node-sub" font-size="10.88">cuda:13.2.1-runtime-ubuntu24.04</text>
   </g>
-  <g id="node-runtime-image" data-graph-role="node" data-node-id="runtime-image" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="510,136,770,192">
-  <rect x="510.0" y="136.0" width="260.0" height="56.0" rx="10.0" fill="#eff6ff" stroke="#3b82f6" stroke-width="2.0"/>
-  <rect x="516.0" y="142.0" width="248.0" height="44.0" rx="7.0" fill="none" stroke="#3b82f6" stroke-width="1.2" opacity="0.65"/>
-  <text data-text-role="title" data-full-text="Shared Runtime Image" data-text-max-width="228.0" x="640.0" y="164.0" text-anchor="middle" class="node-title" font-size="18">Shared Runtime Image</text>
-  <text data-text-role="subtitle" data-full-text="libcurl4 + libgomp1 (no engines)" data-text-max-width="228.0" x="640.0" y="186.0" text-anchor="middle" class="node-sub" font-size="12">libcurl4 + libgomp1 (no engines)</text>
+  <g id="node-runtime-image" data-graph-role="node" data-node-id="runtime-image" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="520,136,780,200">
+  <rect x="520.0" y="136.0" width="260.0" height="64.0" rx="10.0" fill="#eff6ff" stroke="#3b82f6" stroke-width="2.0"/>
+  <rect x="526.0" y="142.0" width="248.0" height="52.0" rx="7.0" fill="none" stroke="#3b82f6" stroke-width="1.2" opacity="0.65"/>
+  <text data-text-role="title" data-full-text="Shared Runtime Image" data-text-max-width="228.0" x="650.0" y="168.0" text-anchor="middle" class="node-title" font-size="18">Shared Runtime Image</text>
+  <text data-text-role="subtitle" data-full-text="libcurl4 + libgomp1 (no engines)" data-text-max-width="228.0" x="650.0" y="190.0" text-anchor="middle" class="node-sub" font-size="12">libcurl4 + libgomp1 (no engines)</text>
   </g>
-  <g id="node-host-llama" data-graph-role="node" data-node-id="host-llama" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="64,354,254,430">
-  <rect x="64.0" y="354.0" width="190.0" height="76.0" rx="10.0" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="/usr/local/{bin,lib}" data-text-max-width="166.0" x="159.0" y="392.0" text-anchor="middle" class="node-title" font-size="15.3">/usr/local/{bin,lib}</text>
-  <text data-text-role="subtitle" data-full-text="llama-server + ggml" data-text-max-width="166.0" x="159.0" y="414.0" text-anchor="middle" class="node-sub" font-size="12">llama-server + ggml</text>
+  <g id="node-host-llama" data-graph-role="node" data-node-id="host-llama" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="64,362,254,438">
+  <rect x="64.0" y="362.0" width="190.0" height="76.0" rx="10.0" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/local/{bin,lib}" data-text-max-width="166.0" x="159.0" y="400.0" text-anchor="middle" class="node-title" font-size="15.3">/usr/local/{bin,lib}</text>
+  <text data-text-role="subtitle" data-full-text="llama-server + ggml" data-text-max-width="166.0" x="159.0" y="422.0" text-anchor="middle" class="node-sub" font-size="12">llama-server + ggml</text>
   </g>
-  <g id="node-svc-qwen38" data-graph-role="node" data-node-id="svc-qwen38" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="300,346,500,438">
-  <rect x="300.0" y="346.0" width="200.0" height="92.0" rx="10.0" fill="#eff6ff" stroke="#2563eb" stroke-width="2.0"/>
-  <rect x="306.0" y="352.0" width="188.0" height="80.0" rx="7.0" fill="none" stroke="#2563eb" stroke-width="1.2" opacity="0.65"/>
-  <text data-text-role="title" data-full-text="qwen38-27b (:8085)" data-text-max-width="168.0" x="400.0" y="392.0" text-anchor="middle" class="node-title" font-size="15.61">qwen38-27b (:8085)</text>
-  <text data-text-role="subtitle" data-full-text="/opt/llama:ro · mlock=-1" data-text-max-width="168.0" x="400.0" y="414.0" text-anchor="middle" class="node-sub" font-size="12">/opt/llama:ro · mlock=-1</text>
+  <g id="node-svc-qwen38" data-graph-role="node" data-node-id="svc-qwen38" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="300,354,500,446">
+  <rect x="300.0" y="354.0" width="200.0" height="92.0" rx="10.0" fill="#eff6ff" stroke="#2563eb" stroke-width="2.0"/>
+  <rect x="306.0" y="360.0" width="188.0" height="80.0" rx="7.0" fill="none" stroke="#2563eb" stroke-width="1.2" opacity="0.65"/>
+  <text data-text-role="title" data-full-text="qwen38-27b (:8085)" data-text-max-width="168.0" x="400.0" y="400.0" text-anchor="middle" class="node-title" font-size="15.61">qwen38-27b (:8085)</text>
+  <text data-text-role="subtitle" data-full-text="/opt/llama:ro · mlock=-1" data-text-max-width="168.0" x="400.0" y="422.0" text-anchor="middle" class="node-sub" font-size="12">/opt/llama:ro · mlock=-1</text>
   </g>
-  <g id="node-host-models" data-graph-role="node" data-node-id="host-models" data-semantic-role="cylinder" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="546,354,754,430">
-  <ellipse cx="650.0" cy="363.5" rx="104.0" ry="9.5" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.2"/>
-  <rect x="546.0" y="363.5" width="208.0" height="57.0" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.2"/>
-  <ellipse cx="650.0" cy="420.5" rx="104.0" ry="9.5" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.2"/>
-  <ellipse cx="650.0" cy="382.88" rx="104.0" ry="9.5" fill="none" stroke="#16a34a" stroke-opacity="0.45" stroke-width="1.2"/>
-  <ellipse cx="650.0" cy="399.6" rx="104.0" ry="9.5" fill="none" stroke="#16a34a" stroke-opacity="0.25" stroke-width="1.2"/>
-  <text data-text-role="title" data-full-text="/mnt/ssd/huggingface" data-text-max-width="184.0" x="650.0" y="386.0" text-anchor="middle" class="node-title" font-size="15.02">/mnt/ssd/huggingface</text>
-  <text data-text-role="subtitle" data-full-text="GGUF · MTP · VAE" data-text-max-width="184.0" x="650.0" y="410.0" text-anchor="middle" class="node-sub" font-size="12">GGUF · MTP · VAE</text>
+  <g id="node-host-models" data-graph-role="node" data-node-id="host-models" data-semantic-role="cylinder" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="546,362,754,438">
+  <ellipse cx="650.0" cy="371.5" rx="104.0" ry="9.5" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.2"/>
+  <rect x="546.0" y="371.5" width="208.0" height="57.0" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.2"/>
+  <ellipse cx="650.0" cy="428.5" rx="104.0" ry="9.5" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.2"/>
+  <ellipse cx="650.0" cy="390.88" rx="104.0" ry="9.5" fill="none" stroke="#16a34a" stroke-opacity="0.45" stroke-width="1.2"/>
+  <ellipse cx="650.0" cy="407.6" rx="104.0" ry="9.5" fill="none" stroke="#16a34a" stroke-opacity="0.25" stroke-width="1.2"/>
+  <text data-text-role="title" data-full-text="/mnt/ssd/huggingface" data-text-max-width="184.0" x="650.0" y="394.0" text-anchor="middle" class="node-title" font-size="15.02">/mnt/ssd/huggingface</text>
+  <text data-text-role="subtitle" data-full-text="GGUF · MTP · VAE" data-text-max-width="184.0" x="650.0" y="418.0" text-anchor="middle" class="node-sub" font-size="12">GGUF · MTP · VAE</text>
   </g>
-  <g id="node-svc-qwen-image" data-graph-role="node" data-node-id="svc-qwen-image" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="800,346,1000,438">
-  <rect x="800.0" y="346.0" width="200.0" height="92.0" rx="10.0" fill="#faf5ff" stroke="#9333ea" stroke-width="2.0"/>
-  <rect x="806.0" y="352.0" width="188.0" height="80.0" rx="7.0" fill="none" stroke="#9333ea" stroke-width="1.2" opacity="0.65"/>
-  <text data-text-role="title" data-full-text="qwen-image (:8083)" data-text-max-width="168.0" x="900.0" y="392.0" text-anchor="middle" class="node-title" font-size="16.03">qwen-image (:8083)</text>
-  <text data-text-role="subtitle" data-full-text="/opt/sdcpp/bin:ro" data-text-max-width="168.0" x="900.0" y="414.0" text-anchor="middle" class="node-sub" font-size="12">/opt/sdcpp/bin:ro</text>
+  <g id="node-svc-qwen-image" data-graph-role="node" data-node-id="svc-qwen-image" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="800,354,1000,446">
+  <rect x="800.0" y="354.0" width="200.0" height="92.0" rx="10.0" fill="#faf5ff" stroke="#9333ea" stroke-width="2.0"/>
+  <rect x="806.0" y="360.0" width="188.0" height="80.0" rx="7.0" fill="none" stroke="#9333ea" stroke-width="1.2" opacity="0.65"/>
+  <text data-text-role="title" data-full-text="qwen-image (:8083)" data-text-max-width="168.0" x="900.0" y="400.0" text-anchor="middle" class="node-title" font-size="16.03">qwen-image (:8083)</text>
+  <text data-text-role="subtitle" data-full-text="/opt/sdcpp/bin:ro" data-text-max-width="168.0" x="900.0" y="422.0" text-anchor="middle" class="node-sub" font-size="12">/opt/sdcpp/bin:ro</text>
   </g>
-  <g id="node-host-sdcpp" data-graph-role="node" data-node-id="host-sdcpp" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1046,354,1216,430">
-  <rect x="1046.0" y="354.0" width="170.0" height="76.0" rx="10.0" fill="#faf5ff" stroke="#9333ea" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="/opt/sdcpp/bin" data-text-max-width="146.0" x="1131.0" y="392.0" text-anchor="middle" class="node-title" font-size="17.19">/opt/sdcpp/bin</text>
-  <text data-text-role="subtitle" data-full-text="sd-server (static)" data-text-max-width="146.0" x="1131.0" y="414.0" text-anchor="middle" class="node-sub" font-size="12">sd-server (static)</text>
+  <g id="node-host-sdcpp" data-graph-role="node" data-node-id="host-sdcpp" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1046,362,1216,438">
+  <rect x="1046.0" y="362.0" width="170.0" height="76.0" rx="10.0" fill="#faf5ff" stroke="#9333ea" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/opt/sdcpp/bin" data-text-max-width="146.0" x="1131.0" y="400.0" text-anchor="middle" class="node-title" font-size="17.19">/opt/sdcpp/bin</text>
+  <text data-text-role="subtitle" data-full-text="sd-server (static)" data-text-max-width="146.0" x="1131.0" y="422.0" text-anchor="middle" class="node-sub" font-size="12">sd-server (static)</text>
   </g>
-  <g id="node-host-nvidia" data-graph-role="node" data-node-id="host-nvidia" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="474,566,806,622">
-  <rect x="474.0" y="566.0" width="332.0" height="56.0" rx="10.0" fill="#fff7ed" stroke="#ea580c" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="NVIDIA Container Toolkit (CDI)" data-text-max-width="308.0" x="640.0" y="594.0" text-anchor="middle" class="node-title" font-size="18">NVIDIA Container Toolkit (CDI)</text>
-  <text data-text-role="subtitle" data-full-text="nvidia.com/gpu=all · nvgpu (no openrm)" data-text-max-width="308.0" x="640.0" y="616.0" text-anchor="middle" class="node-sub" font-size="12">nvidia.com/gpu=all · nvgpu (no openrm)</text>
+  <g id="node-host-nvidia" data-graph-role="node" data-node-id="host-nvidia" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="474,574,806,638">
+  <rect x="474.0" y="574.0" width="332.0" height="64.0" rx="10.0" fill="#fff7ed" stroke="#ea580c" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="NVIDIA Container Toolkit (CDI)" data-text-max-width="308.0" x="640.0" y="606.0" text-anchor="middle" class="node-title" font-size="18">NVIDIA Container Toolkit (CDI)</text>
+  <text data-text-role="subtitle" data-full-text="nvidia.com/gpu=all · nvgpu (no openrm)" data-text-max-width="308.0" x="640.0" y="628.0" text-anchor="middle" class="node-sub" font-size="12">nvidia.com/gpu=all · nvgpu (no openrm)</text>
   </g>
-  <g id="build-image-label" data-graph-role="label" data-owner="build-image" data-graph-bounds="465.24,198,514.76,218">
-  <rect x="465.24" y="198.0" width="49.519999999999996" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="490.0" y="212.0" text-anchor="middle" class="arrow-label">builds</text>
+  <g id="build-image-label" data-graph-role="label" data-owner="build-image" data-graph-bounds="461.24,137,510.76,157">
+  <rect x="461.24" y="137.0" width="49.519999999999996" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="486.0" y="151.0" text-anchor="middle" class="arrow-label">builds</text>
   </g>
-  <g id="a-image-to-qwen38-label" data-graph-role="label" data-owner="a-image-to-qwen38" data-graph-bounds="494.58,229,536.42,249">
-  <rect x="494.58" y="229.0" width="41.839999999999996" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="515.5" y="243.0" text-anchor="middle" class="arrow-label">base</text>
+  <g id="a-image-to-qwen38-label" data-graph-role="label" data-owner="a-image-to-qwen38" data-graph-bounds="499.58,211,541.42,231">
+  <rect x="499.58" y="211.0" width="41.839999999999996" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="520.5" y="225.0" text-anchor="middle" class="arrow-label">base</text>
   </g>
-  <g id="b-image-to-qwen-image-label" data-graph-role="label" data-owner="b-image-to-qwen-image" data-graph-bounds="753.58,237,795.42,257">
-  <rect x="753.58" y="237.0" width="41.839999999999996" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="774.5" y="251.0" text-anchor="middle" class="arrow-label">base</text>
+  <g id="b-image-to-qwen-image-label" data-graph-role="label" data-owner="b-image-to-qwen-image" data-graph-bounds="758.58,245,800.42,265">
+  <rect x="758.58" y="245.0" width="41.839999999999996" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="779.5" y="259.0" text-anchor="middle" class="arrow-label">base</text>
   </g>
-  <g id="mount-llama-label" data-graph-role="label" data-owner="mount-llama" data-graph-bounds="259,361,295,381">
-  <rect x="259.0" y="361.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="277.0" y="375.0" text-anchor="middle" class="arrow-label">:ro</text>
+  <g id="mount-llama-label" data-graph-role="label" data-owner="mount-llama" data-graph-bounds="259,369,295,389">
+  <rect x="259.0" y="369.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="277.0" y="383.0" text-anchor="middle" class="arrow-label">:ro</text>
   </g>
-  <g id="mount-models-qwen38-label" data-graph-role="label" data-owner="mount-models-qwen38" data-graph-bounds="505,361,541,381">
-  <rect x="505.0" y="361.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="523.0" y="375.0" text-anchor="middle" class="arrow-label">rw</text>
+  <g id="mount-models-qwen38-label" data-graph-role="label" data-owner="mount-models-qwen38" data-graph-bounds="505,369,541,389">
+  <rect x="505.0" y="369.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="523.0" y="383.0" text-anchor="middle" class="arrow-label">rw</text>
   </g>
-  <g id="mount-models-qwen-image-label" data-graph-role="label" data-owner="mount-models-qwen-image" data-graph-bounds="759,361,795,381">
-  <rect x="759.0" y="361.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="777.0" y="375.0" text-anchor="middle" class="arrow-label">rw</text>
+  <g id="mount-models-qwen-image-label" data-graph-role="label" data-owner="mount-models-qwen-image" data-graph-bounds="759,369,795,389">
+  <rect x="759.0" y="369.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="777.0" y="383.0" text-anchor="middle" class="arrow-label">rw</text>
   </g>
-  <g id="mount-sdcpp-label" data-graph-role="label" data-owner="mount-sdcpp" data-graph-bounds="1005,361,1041,381">
-  <rect x="1005.0" y="361.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="1023.0" y="375.0" text-anchor="middle" class="arrow-label">:ro</text>
+  <g id="mount-sdcpp-label" data-graph-role="label" data-owner="mount-sdcpp" data-graph-bounds="1005,369,1041,389">
+  <rect x="1005.0" y="369.0" width="36.0" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="1023.0" y="383.0" text-anchor="middle" class="arrow-label">:ro</text>
   </g>
-  <g id="inject-gpu-qwen38-label" data-graph-role="label" data-owner="inject-gpu-qwen38" data-graph-bounds="328.76,502,397,522">
-  <rect x="328.76" y="502.0" width="68.24" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="362.88" y="516.0" text-anchor="middle" class="arrow-label">GPU + CDI</text>
+  <g id="inject-gpu-qwen38-label" data-graph-role="label" data-owner="inject-gpu-qwen38" data-graph-bounds="328.76,512,397,532">
+  <rect x="328.76" y="512.0" width="68.24" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="362.88" y="526.0" text-anchor="middle" class="arrow-label">GPU + CDI</text>
   </g>
-  <g id="inject-gpu-qwen-image-label" data-graph-role="label" data-owner="inject-gpu-qwen-image" data-graph-bounds="828.76,502,897,522">
-  <rect x="828.76" y="502.0" width="68.24" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
-  <text x="862.88" y="516.0" text-anchor="middle" class="arrow-label">GPU + CDI</text>
+  <g id="inject-gpu-qwen-image-label" data-graph-role="label" data-owner="inject-gpu-qwen-image" data-graph-bounds="828.76,512,897,532">
+  <rect x="828.76" y="512.0" width="68.24" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="862.88" y="526.0" text-anchor="middle" class="arrow-label">GPU + CDI</text>
   </g>
   <g id="legend" data-graph-role="legend">
-    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="676" width="706.24" height="46" rx="10" fill="none" stroke="none"/>
-    <line data-graph-role="decoration" x1="40.0" y1="690.0" x2="70.0" y2="690.0" stroke="#7c3aed" stroke-width="2.4" marker-end="url(#arrowA)"/>
-    <text data-graph-role="decoration" x="80.0" y="694.0" class="legend">build / base image</text>
-    <line data-graph-role="decoration" x1="216.0" y1="690.0" x2="246.0" y2="690.0" stroke="#f97316" stroke-width="2.4" marker-end="url(#arrowE)"/>
-    <text data-graph-role="decoration" x="256.0" y="694.0" class="legend">engine mount (:ro)</text>
-    <line data-graph-role="decoration" x1="397.76" y1="690.0" x2="427.76" y2="690.0" stroke="#10b981" stroke-width="2.4" marker-end="url(#arrowB)"/>
-    <text data-graph-role="decoration" x="437.76" y="694.0" class="legend">model volume (rw)</text>
-    <line data-graph-role="decoration" x1="572.56" y1="690.0" x2="602.56" y2="690.0" stroke="#7c3aed" stroke-width="2.4" marker-end="url(#arrowA)"/>
-    <text data-graph-role="decoration" x="612.56" y="694.0" class="legend">GPU CDI injection</text>
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="688" width="706.24" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="702.0" x2="70.0" y2="702.0" stroke="#2563eb" stroke-width="2.4" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="706.0" class="legend">build / base image</text>
+    <line data-graph-role="decoration" x1="216.0" y1="702.0" x2="246.0" y2="702.0" stroke="#f97316" stroke-width="2.4" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="256.0" y="706.0" class="legend">engine mount (:ro)</text>
+    <line data-graph-role="decoration" x1="397.76" y1="702.0" x2="427.76" y2="702.0" stroke="#10b981" stroke-width="2.4" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="437.76" y="706.0" class="legend">model volume (rw)</text>
+    <line data-graph-role="decoration" x1="572.56" y1="702.0" x2="602.56" y2="702.0" stroke="#7c3aed" stroke-width="2.4" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="612.56" y="706.0" class="legend">GPU CDI injection</text>
   </g>
-  <g id="footer" data-graph-role="reserved" data-graph-bounds="40,740,467,756">
-  <text x="40.0" y="752.0" class="footnote">Style 1 · Flat Icon · source: Dockerfile &amp; docker-compose.yml</text>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="40,750,467,766">
+  <text x="40.0" y="762.0" class="footnote">Style 1 · Flat Icon · source: Dockerfile &amp; docker-compose.yml</text>
   </g>
 </svg>

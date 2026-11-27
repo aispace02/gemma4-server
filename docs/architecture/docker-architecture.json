@@ -6,22 +6,22 @@
   "quality_profile": "showcase",
   "text_policy": "strict",
   "width": 1280,
-  "height": 780,
+  "height": 790,
   "title": "Jetson Orin Docker Inference Architecture",
   "subtitle": "shared lean CUDA runtime image + read-only host engine mounts + shared model volume",
   "containers": [
     {
       "id": "build-stage",
-      "x": 220,
+      "x": 210,
       "y": 96,
-      "width": 604,
-      "height": 116,
+      "width": 594,
+      "height": 124,
       "label": "1. Build Stage (docker compose build)"
     },
     {
       "id": "runtime-plane",
       "x": 40,
-      "y": 296,
+      "y": 304,
       "width": 1200,
       "height": 170,
       "label": "2. Run Stage (docker compose up)"
@@ -29,9 +29,9 @@
     {
       "id": "nvidia-plane",
       "x": 450,
-      "y": 528,
+      "y": 536,
       "width": 380,
-      "height": 116,
+      "height": 124,
       "label": "3. Host GPU & CDI"
     }
   ],
@@ -39,10 +39,10 @@
     {
       "id": "dockerfile",
       "kind": "rect",
-      "x": 244,
+      "x": 232,
       "y": 136,
-      "width": 226,
-      "height": 56,
+      "width": 220,
+      "height": 64,
       "label": "Dockerfile",
       "sublabel": "cuda:13.2.1-runtime-ubuntu24.04",
       "fill": "#f8fafc",
@@ -53,10 +53,10 @@
     {
       "id": "runtime-image",
       "kind": "double_rect",
-      "x": 510,
+      "x": 520,
       "y": 136,
       "width": 260,
-      "height": 56,
+      "height": 64,
       "label": "Shared Runtime Image",
       "sublabel": "libcurl4 + libgomp1 (no engines)",
       "fill": "#eff6ff",
@@ -68,7 +68,7 @@
       "id": "host-llama",
       "kind": "rect",
       "x": 64,
-      "y": 354,
+      "y": 362,
       "width": 190,
       "height": 76,
       "label": "/usr/local/{bin,lib}",
@@ -82,7 +82,7 @@
       "id": "svc-qwen38",
       "kind": "double_rect",
       "x": 300,
-      "y": 346,
+      "y": 354,
       "width": 200,
       "height": 92,
       "label": "qwen38-27b (:8085)",
@@ -96,7 +96,7 @@
       "id": "host-models",
       "kind": "cylinder",
       "x": 546,
-      "y": 354,
+      "y": 362,
       "width": 208,
       "height": 76,
       "label": "/mnt/ssd/huggingface",
@@ -109,7 +109,7 @@
       "id": "svc-qwen-image",
       "kind": "double_rect",
       "x": 800,
-      "y": 346,
+      "y": 354,
       "width": 200,
       "height": 92,
       "label": "qwen-image (:8083)",
@@ -123,7 +123,7 @@
       "id": "host-sdcpp",
       "kind": "rect",
       "x": 1046,
-      "y": 354,
+      "y": 362,
       "width": 170,
       "height": 76,
       "label": "/opt/sdcpp/bin",
@@ -137,9 +137,9 @@
       "id": "host-nvidia",
       "kind": "rect",
       "x": 474,
-      "y": 566,
+      "y": 574,
       "width": 332,
-      "height": 56,
+      "height": 64,
       "label": "NVIDIA Container Toolkit (CDI)",
       "sublabel": "nvidia.com/gpu=all · nvgpu (no openrm)",
       "fill": "#fff7ed",
@@ -155,7 +155,7 @@
       "target": "runtime-image",
       "source_port": "right",
       "target_port": "left",
-      "flow": "control",
+      "flow": "read",
       "label": "builds"
     },
     {
@@ -164,7 +164,7 @@
       "target": "svc-qwen38",
       "source_port": "bottom",
       "target_port": "top",
-      "flow": "control",
+      "flow": "read",
       "label": "base"
     },
     {
@@ -173,9 +173,9 @@
       "target": "svc-qwen-image",
       "source_port": "bottom",
       "target_port": "top",
-      "flow": "control",
+      "flow": "read",
       "label": "base",
-      "route_points": [[649, 268], [900, 268]]
+      "route_points": [[659, 276], [900, 276]]
     },
     {
       "id": "mount-llama",
@@ -236,15 +236,15 @@
   ],
   "legend_orientation": "horizontal",
   "legend_x": 40,
-  "legend_y": 690,
+  "legend_y": 702,
   "legend_locked": true,
   "legend": [
-    { "flow": "control", "label": "build / base image" },
+    { "flow": "read", "label": "build / base image" },
     { "flow": "data", "label": "engine mount (:ro)" },
     { "flow": "write", "label": "model volume (rw)" },
     { "flow": "async", "label": "GPU CDI injection" }
   ],
   "footer": "Style 1 · Flat Icon · source: Dockerfile & docker-compose.yml",
   "footer_x": 40,
-  "footer_y": 752
+  "footer_y": 762
 }

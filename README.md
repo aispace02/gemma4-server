@@ -6,28 +6,9 @@
 
 `docker compose build` 只构建运行时镜像（CUDA runtime + 少量系统库），不编译引擎、不下载模型；`docker compose up` 才创建容器，按 Compose 配置挂载宿主机文件、GPU 和启动命令。
 
-```text
-1. 构建阶段（docker compose build）
-   Dockerfile ──▶ 统一运行时镜像（两服务共用）
-                  nvcr.io/nvidia/cuda:13.2.1-runtime-ubuntu24.04 + libcurl4 + libgomp1
-                  （不编译推理引擎，不打包模型文件）
+![Jetson Orin Docker 推理服务架构](docs/architecture/docker-architecture.svg)
 
-2. 运行阶段（docker compose up，基于同一镜像启动独立容器）
-   Host（Jetson Orin）                        Containers（docker compose up）
-   ┌────────────────────────────────┐        ┌──────────────────────────────────┐
-   │ /usr/local/bin, /usr/local/lib │──:ro──▶│ qwen38-27b                       │
-   │   llama-server + 共享库        │        │   /opt/llama/bin, /opt/llama/lib │
-   ├────────────────────────────────┤        │   /root/.cache/huggingface       │
-   │ /opt/sdcpp/bin                 │──:ro──▶│ qwen-image                       │
-   │   sd-server（静态链接 ggml）   │        │   /opt/sdcpp/bin                 │
-   ├────────────────────────────────┤        │   /root/.cache/huggingface       │
-   │ /mnt/ssd/huggingface           │──rw───▶│ （两容器共用模型卷）             │
-   │   GGUF / MTP / VAE / mmproj    │        ├──────────────────────────────────┤
-   ├────────────────────────────────┤        │ 共同运行时注入：                 │
-   │ NVIDIA Driver / GPU (CDI)      │──注入─▶│   GPU 设备与驱动库               │
-   │ docker-compose.yml             │        │   network_mode: host / ulimits   │
-   └────────────────────────────────┘        └──────────────────────────────────┘
-```
+> 交互式架构图见 [docker-architecture.html](docs/architecture/docker-architecture.html)，原始结构化描述（Fireworks JSON IR）见 [docker-architecture.json](docs/architecture/docker-architecture.json)。
 
 | 内容 | 是否进入 Image | Host 来源 | Container 内路径 | 更新方式 |
 | --- | --- | --- | --- | --- |
