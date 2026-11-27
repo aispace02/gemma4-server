@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "mode": "architecture",
+  "template_type": "architecture",
+  "style": 1,
+  "quality_profile": "showcase",
+  "text_policy": "strict",
+  "width": 1280,
+  "height": 780,
+  "title": "Jetson Orin Docker Inference Architecture",
+  "subtitle": "shared lean CUDA runtime image + read-only host engine mounts + shared model volume",
+  "containers": [
+    {
+      "id": "build-stage",
+      "x": 220,
+      "y": 96,
+      "width": 604,
+      "height": 116,
+      "label": "1. Build Stage (docker compose build)"
+    },
+    {
+      "id": "runtime-plane",
+      "x": 40,
+      "y": 296,
+      "width": 1200,
+      "height": 170,
+      "label": "2. Run Stage (docker compose up)"
+    },
+    {
+      "id": "nvidia-plane",
+      "x": 450,
+      "y": 528,
+      "width": 380,
+      "height": 116,
+      "label": "3. Host GPU & CDI"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "dockerfile",
+      "kind": "rect",
+      "x": 244,
+      "y": 136,
+      "width": 226,
+      "height": 56,
+      "label": "Dockerfile",
+      "sublabel": "cuda:13.2.1-runtime-ubuntu24.04",
+      "fill": "#f8fafc",
+      "stroke": "#64748b",
+      "flat": true,
+      "source_refs": ["Dockerfile#L46-L54"]
+    },
+    {
+      "id": "runtime-image",
+      "kind": "double_rect",
+      "x": 510,
+      "y": 136,
+      "width": 260,
+      "height": 56,
+      "label": "Shared Runtime Image",
+      "sublabel": "libcurl4 + libgomp1 (no engines)",
+      "fill": "#eff6ff",
+      "stroke": "#3b82f6",
+      "flat": true,
+      "source_refs": ["Dockerfile#L1-L61"]
+    },
+    {
+      "id": "host-llama",
+      "kind": "rect",
+      "x": 64,
+      "y": 354,
+      "width": 190,
+      "height": 76,
+      "label": "/usr/local/{bin,lib}",
+      "sublabel": "llama-server + ggml",
+      "fill": "#eff6ff",
+      "stroke": "#2563eb",
+      "flat": true,
+      "source_refs": ["docker-compose.yml#L24-L25", "README.md#L244-L266"]
+    },
+    {
+      "id": "svc-qwen38",
+      "kind": "double_rect",
+      "x": 300,
+      "y": 346,
+      "width": 200,
+      "height": 92,
+      "label": "qwen38-27b (:8085)",
+      "sublabel": "/opt/llama:ro · mlock=-1",
+      "fill": "#eff6ff",
+      "stroke": "#2563eb",
+      "flat": true,
+      "source_refs": ["docker-compose.yml#L74-L109"]
+    },
+    {
+      "id": "host-models",
+      "kind": "cylinder",
+      "x": 546,
+      "y": 354,
+      "width": 208,
+      "height": 76,
+      "label": "/mnt/ssd/huggingface",
+      "sublabel": "GGUF · MTP · VAE",
+      "fill": "#f0fdf4",
+      "stroke": "#16a34a",
+      "source_refs": ["docker-compose.yml#L20,L58", "scripts/update-models.py#L27"]
+    },
+    {
+      "id": "svc-qwen-image",
+      "kind": "double_rect",
+      "x": 800,
+      "y": 346,
+      "width": 200,
+      "height": 92,
+      "label": "qwen-image (:8083)",
+      "sublabel": "/opt/sdcpp/bin:ro",
+      "fill": "#faf5ff",
+      "stroke": "#9333ea",
+      "flat": true,
+      "source_refs": ["docker-compose.yml#L111-L132"]
+    },
+    {
+      "id": "host-sdcpp",
+      "kind": "rect",
+      "x": 1046,
+      "y": 354,
+      "width": 170,
+      "height": 76,
+      "label": "/opt/sdcpp/bin",
+      "sublabel": "sd-server (static)",
+      "fill": "#faf5ff",
+      "stroke": "#9333ea",
+      "flat": true,
+      "source_refs": ["docker-compose.yml#L59", "README.md#L291-L310"]
+    },
+    {
+      "id": "host-nvidia",
+      "kind": "rect",
+      "x": 474,
+      "y": 566,
+      "width": 332,
+      "height": 56,
+      "label": "NVIDIA Container Toolkit (CDI)",
+      "sublabel": "nvidia.com/gpu=all · nvgpu (no openrm)",
+      "fill": "#fff7ed",
+      "stroke": "#ea580c",
+      "flat": true,
+      "source_refs": ["docker-compose.yml#L14-L16,L38,L67", "README.md#L366-L407"]
+    }
+  ],
+  "arrows": [
+    {
+      "id": "build-image",
+      "source": "dockerfile",
+      "target": "runtime-image",
+      "source_port": "right",
+      "target_port": "left",
+      "flow": "control",
+      "label": "builds"
+    },
+    {
+      "id": "a-image-to-qwen38",
+      "source": "runtime-image",
+      "target": "svc-qwen38",
+      "source_port": "bottom",
+      "target_port": "top",
+      "flow": "control",
+      "label": "base"
+    },
+    {
+      "id": "b-image-to-qwen-image",
+      "source": "runtime-image",
+      "target": "svc-qwen-image",
+      "source_port": "bottom",
+      "target_port": "top",
+      "flow": "control",
+      "label": "base",
+      "route_points": [[649, 268], [900, 268]]
+    },
+    {
+      "id": "mount-llama",
+      "source": "host-llama",
+      "target": "svc-qwen38",
+      "source_port": "right",
+      "target_port": "left",
+      "flow": "data",
+      "label": ":ro"
+    },
+    {
+      "id": "mount-models-qwen38",
+      "source": "host-models",
+      "target": "svc-qwen38",
+      "source_port": "left",
+      "target_port": "right",
+      "flow": "write",
+      "label": "rw"
+    },
+    {
+      "id": "mount-models-qwen-image",
+      "source": "host-models",
+      "target": "svc-qwen-image",
+      "source_port": "right",
+      "target_port": "left",
+      "flow": "write",
+      "label": "rw"
+    },
+    {
+      "id": "mount-sdcpp",
+      "source": "host-sdcpp",
+      "target": "svc-qwen-image",
+      "source_port": "left",
+      "target_port": "right",
+      "flow": "data",
+      "label": ":ro"
+    },
+    {
+      "id": "inject-gpu-qwen38",
+      "source": "host-nvidia",
+      "target": "svc-qwen38",
+      "source_port": "left",
+      "target_port": "bottom",
+      "flow": "async",
+      "label": "GPU + CDI",
+      "dashed": true
+    },
+    {
+      "id": "inject-gpu-qwen-image",
+      "source": "host-nvidia",
+      "target": "svc-qwen-image",
+      "source_port": "right",
+      "target_port": "bottom",
+      "flow": "async",
+      "label": "GPU + CDI",
+      "dashed": true
+    }
+  ],
+  "legend_orientation": "horizontal",
+  "legend_x": 40,
+  "legend_y": 690,
+  "legend_locked": true,
+  "legend": [
+    { "flow": "control", "label": "build / base image" },
+    { "flow": "data", "label": "engine mount (:ro)" },
+    { "flow": "write", "label": "model volume (rw)" },
+    { "flow": "async", "label": "GPU CDI injection" }
+  ],
+  "footer": "Style 1 · Flat Icon · source: Dockerfile & docker-compose.yml",
+  "footer_x": 40,
+  "footer_y": 752
+}
